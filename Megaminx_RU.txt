@@ -2,20 +2,16 @@ Scramble Aperm
 EDGES
 
 1 2 3 4 5 6 7 8 9
-0 0 0 0 0 0 0 0 0
 CORNERS
 4 2 3 5 1 6 7 8
-0 0 0 0 0 0 0 0
 End
 
 Scramble Uperm
 EDGES
 
 2 5 3 4 1 6 7 8 9
-0 0 0 0 0 0 0 0 0
 CORNERS
 1 2 3 4 5 6 7 8
-0 0 0 0 0 0 0 0
 End
 
 QTM
@@ -24,8 +20,6 @@ Scramble Aperm (QTM)
 EDGES
 
 1 2 3 4 5 6 7 8 9
-0 0 0 0 0 0 0 0 0
 CORNERS
 4 2 3 5 1 6 7 8
-0 0 0 0 0 0 0 0
 End

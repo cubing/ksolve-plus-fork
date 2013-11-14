@@ -71,7 +71,7 @@ Solved
 ...
 End
 
-The Solved command defines the solved state of your puzzle. Of course, you will usually want the puzzle to end up with every piece in its original position and unoriented, but you have the option of solving to a different state. You need to define a permutation and orientation for each set in your puzzle.
+The Solved command defines the solved state of your puzzle. Of course, you will usually want the puzzle to end up with every piece in its original position and unoriented, but you have the option of solving to a different state. You need to define a permutation for each set in your puzzle. The orientation vector is not required; if you leave it out, ksolve+ will set all of the missing orientations to 0.
 
 Permutation vectors and orientation vectors simply describe where every piece in a group is and how they are oriented. A permutation vector is a list of the numbers from 1 to n in some order, such as 2 3 1 4 5 6. This describes where each piece goes - for instance, the 2 in the first spot means that piece number 1 is in spot 2. An orientation vector is a list of n numbers from 0 up to the maximum orientation, such as 0 0 0 1 1 0. A piece marked with a 0 is unoriented, and a piece with an orientation of 1, 2, etc. is oriented by that much. For example, 3x3x3 edges have two orientations each, so with that type of piece your orientation vector will only have 0s and 1s.
 
@@ -84,7 +84,7 @@ Move [move_name]
 ...
 End
 
-The Move command defines one of the possible moves and how it affects the pieces in your puzzle. Again, you need to define a permutation and orientation for each set in your puzzle.
+The Move command defines one of the possible moves and how it affects the pieces in your puzzle. Again, you need to define a permutation for each set in your puzzle, and you can either give the orientation or (to have it set to all 0s) leave it out.
 
 ksolve+ will not just understand this move, but also all powers of it. For example, if your puzzle is a 3x3x3 and you define a move of the right face which you call R, ksolve+ will also create moves called R2 and R' automatically. You do not need to define those moves separately.
 
@@ -97,9 +97,9 @@ Ignore
 ...
 End
 
-The Ignore command defines which parts of the puzzle ksolve+ may ignore while solving. You do not need to include all of the piece types here - if there are any piece types you do not include, ksolve+ will assume you want to solve everything of that type.
+The Ignore command defines which parts of the puzzle ksolve+ may ignore while solving. You do not need to include all of the piece types here - if there are any piece types you do not include, ksolve+ will assume you are not ignoring anything of those types.
 
-The permutations to ignore and orientations to ignore are simply lists of n numbers, each 0 or 1, where n is the number of pieces of that type. A 0 means ksolve+ will solve that, and a 1 means it will ignore it. Note that, if you want, you can ignore the orientation of a piece while still solving its permutation, or the other way around.
+The permutations to ignore and orientations to ignore are simply lists of n numbers, each 0 or 1, where n is the number of pieces of that type. A 0 means ksolve+ will solve that, and a 1 means it will ignore it. Note that, if you want, you can ignore the orientation of a piece while still solving its permutation, or the other way around. If you leave out the orientations, they will all be 0 (that is, ksolve+ will not ignore any orientations).
 
 Note that, unlike earlier versions of ksolve, an Ignore command does not necessarily mean pieces will actually be ignored in the scramble - it just describes all of the pieces scrambles are allowed to ignore. When you write scrambles, you will describe which pieces should be ignored (if any). Thus the same definition file can be used to fully solve positions and to solve positions with some pieces (or some orientations or permutations) ignored.
 
@@ -129,16 +129,7 @@ End
 
 The ForbiddenPairs command defines pairs of moves that can not be used together. For instance, if you have U F', then ksolve+ will not produce any solutions with a U move followed by an F' move. ForbiddenGroups is similar, but each line can have several moves, and it will forbid any pair of moves from the same line.
 
-Note that ksolve+ already forbids obvious move pairs, such as U2 U or R R', so you do not need to add those. If you want to forbid other pairs of moves, however, you can still do that.
-
--- MoveLimits --
-
-MoveLimits
-[move_name] [number]
-...
-End
-
-The MoveLimits command puts upper limits on the number of times a given move (or any of its powers) can be included in a solution. For instance, if you have a limit of "F 2" on a 3x3x3 definition file, then a maximum of two F, F2, or F' moves can be used in any algorithm. If a move has a limit of 0, it will never be used.
+Note that ksolve+ already forbids obvious move pairs, such as U2 U or R R', so you do not need to add those. ksolve+ also forbids some extra pairs to make searches with parallel moves faster (so, for instance, only one of R L and L R will be allowed). If you want to forbid other pairs of moves, however, you can still do that.
 
 -- Using Comments --
 
@@ -212,6 +203,19 @@ HTM
 
 The QTM and HTM commands specify that a scramble will be solved either in QTM (Quarter Turn Metric, where turns of the smallest possible amount count as one turn) or HTM (Half Turn Metric, where turns of any amount count as one turn). The default is HTM. When you use one of these commands, that metric will be used for all scrambles until the end of the file or the next QTM or HTM command.
 
+-- MoveLimits --
+
+MoveLimits
+[move_name] [number]
+...
+End
+
+The MoveLimits command puts upper limits on the number of times a given move or group of moves can be included in a solution. There may be multiple lines, and each line is a separate move limit. If you write a move's name by itself (such as F2), it puts a limit on that move in particular; if you write the name of one of the moves you originally defined, plus a * (such as F*), it puts a move limit on that move and all of its powers.
+
+For instance, a move limit of "F2 1" means that there can be at most one F2 move, and a move limit of "F* 2" means there can be at most two F, F2, or F' moves. If you give a move or group of moves a move limit of 0, algorithms will not include it at all.
+
+Like with Slack, QTM, etc. this command will apply to all scrambles until the next MoveLimits command or until the end of the file. If you want to clear all the limits just include a command with no lines between MoveLimits and End.
+
 ###### God's Algorithm ######
 
 ksolve+ can also compute God's Algorithm tables. That is, for each N, it will compute the number of positions that can be solved in N moves but no fewer. You only need a .def file for this. To compute a God's Algorithm table in HTM (Half Turn Metric), use this command:
@@ -264,6 +268,11 @@ It is possible to define all of the centers together as one piece group in this 
 ###### Version History ######
 
 (ksolve+)
+1.1  Fixed some small bugs in ForbiddenMoves and scramble reading
+     Made orientation vectors optional
+     Moved MoveLimits to scramble file
+     Added ability to limit single moves, with changed syntax
+     Various MoveLimits optimizations
 1.0  Large amount of code refactoring and various small fixes
      Allowed ? to ignore pieces in scrambles, with optional hints
      Automated the effect of Multiplicators, ForbiddenPairs, ParallelMoves

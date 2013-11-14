@@ -169,7 +169,7 @@ static PruneTable getCompletePruneTables(Position solved, MoveList moves, PieceT
 	}    
 	else{
 		if (tablesExist) { // tables exist, but they're old
-			std::cout << "Tables older than def file, recomputing.\n";
+			std::cout << "Pruning tables older than def file, recomputing.\n";
 		} else { // no tables on file
 			std::cout << "Pruning tables not found on file, computing.\n";
 		}

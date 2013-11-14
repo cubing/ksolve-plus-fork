@@ -9,13 +9,11 @@ Set CORNERS 7 3
 Solved
 CORNERS
 1 2 3 4 5 6 7
-0 0 0 0 0 0 0
 End
 
 Move U
 CORNERS
 4 1 2 3 5 6 7
-0 0 0 0 0 0 0
 End
 
 Move R
@@ -29,42 +27,3 @@ CORNERS
 1 2 4 7 5 3 6
 0 0 2 1 0 1 2
 End
-
-# Multiplicators
-# U2 = U U
-# U' = U U U
-# R2 = R R
-# R' = R R R
-# F2 = F F
-# F' = F F F
-# End
-
-# ForbiddenPairs
-# R R
-# R R2
-# R R'
-# R' R
-# R' R'
-# R' R2
-# R2 R
-# R2 R'
-# R2 R2
-# F F
-# F F2
-# F F'
-# F2 F
-# F2 F2
-# F2 F'
-# F' F
-# F' F2
-# F' F'
-# U U
-# U U2
-# U U'
-# U2 U
-# U2 U2
-# U2 U'
-# U' U
-# U' U2
-# U' U'
-# End

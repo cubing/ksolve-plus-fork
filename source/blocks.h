@@ -22,7 +22,7 @@
 #ifndef BLOCKS_H
 #define BLOCKS_H
 
-static bool blocklegal(Position& state, std::set<Block>& blocks, Position& move){
+static bool blockLegal(Position& state, std::vector<Block>& blocks, Position& move){
 	Block changed;
 	Position::iterator iter;
 	for (iter = move.begin(); iter != move.end(); iter++){
@@ -35,14 +35,13 @@ static bool blocklegal(Position& state, std::set<Block>& blocks, Position& move)
 		}
 	}
 	
-	std::set<Block>::iterator block_iter;
 	Block::iterator set_iter;
 	std::set<int>::iterator piece_iter;
-	for (block_iter = blocks.begin(); block_iter != blocks.end(); block_iter++){
+	for (unsigned int i = 0; i < blocks.size(); i++){
 		bool block_moved = true;
 		bool block_stationary = true;
 		
-		Block test = (*block_iter);
+		Block test = blocks[i];
 		for (set_iter = test.begin(); set_iter != test.end(); set_iter++){
 			for (piece_iter = set_iter->second.begin(); piece_iter != set_iter->second.end(); piece_iter++){
 				if (changed[set_iter->first].find(*piece_iter) == changed[set_iter->first].end())

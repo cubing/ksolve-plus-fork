@@ -25,20 +25,20 @@
 // Check if a vector of length n is a permutation 
 // of 1,..,n
 static bool uniquePermutation(std::vector<int> test) {
-   for (int i = 0; i < test.size(); i++)
-      if (test[i] <= 0 || test[i] > test.size())
-         return false; // Number too large or small
-
-   std::vector<bool> temp;
-   for (int i = 0; i < test.size(); i++)
-      temp.push_back(false);
-   for (int i = 0; i < test.size(); i++)
-      temp[test[i] - 1] = true;
-   for (int i = 0; i < temp.size(); i++)
-      if (!temp[i])
-         return false; // Numbers not unique
-
-   return true;
+	int i;
+	int size = (int) test.size();
+	for (i = 0; i < size; i++)
+		if (test[i] <= 0 || test[i] > size)
+			return false; // Number too large or small
+			
+	std::vector<bool> temp (size, false);
+	for (i = 0; i < size; i++)
+		temp[test[i] - 1] = true;
+	for (i = 0; i < size; i++)
+		if (!temp[i])
+			return false; // Numbers not unique
+	
+	return true;
 }
 
 static bool uniquePermutation(int test[], int size) {
@@ -46,9 +46,7 @@ static bool uniquePermutation(int test[], int size) {
       if (test[i] <= 0 || test[i] > size)
          return false; // Number too large or small
          
-   std::vector<bool> temp;
-   for (int i = 0; i < size; i++)
-      temp.push_back(false);
+   std::vector<bool> temp (size, false);
    for (int i = 0; i < size; i++)
       temp[test[i] - 1] = true;
    for (int i = 0; i < size; i++)

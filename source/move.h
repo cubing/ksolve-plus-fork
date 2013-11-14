@@ -28,36 +28,44 @@ static void applyMove(Position& state, Position& new_state, Position& move, Piec
 	for (iter = move.begin(); iter != move.end(); iter++){
 		int size = iter->second.size;
 		int omod = datasets[iter->first].omod;
-		int* orient1 = state[iter->first].orientation;
-		int* orient2 = iter->second.orientation;
 		int* orientOut = new_state[iter->first].orientation;
 		int* permute1 = state[iter->first].permutation;
 		int* permute2 = iter->second.permutation;
 		int* permuteOut = new_state[iter->first].permutation;
 		
-		for (int i=0; i < size; i++) {
-			int permuted = permute2[i] - 1;
-			orientOut[i] = (orient1[permuted] + orient2[permuted]) % omod;
-			permuteOut[i] = permute1[permuted];
+		if (omod == 1) {
+			for (int i=0; i < size; i++) {
+				orientOut[i] = 0;
+				permuteOut[i] = permute1[permute2[i] - 1];
+			}
+		} else {
+			int* orient1 = state[iter->first].orientation;
+			int* orient2 = iter->second.orientation;
+			for (int i=0; i < size; i++) {
+				int permuted = permute2[i] - 1;
+				orientOut[i] = (orient1[permuted] + orient2[permuted]) % omod;
+				permuteOut[i] = permute1[permuted];
+			}
 		}
 	}
 }
 
-static std::vector<int> applySubmoveO(std::vector<int> orientation, int change_o[], int change_p[], int size, int omod){
+static std::vector<int> applySubmoveO(std::vector<int> orientation, int change_o[], int change_p[], unsigned int size, int omod){
 	if (size != orientation.size()){
 		std::cerr << "Vectors not matching in size in call to applySubmoveO(...)\n";
 		exit(-1);
 	}
-	for (int i = 0; i < size; i++)
+	unsigned int i;
+	for (i = 0; i < size; i++)
 		orientation[i] = (orientation[i] + change_o[i]) % omod;
 	std::vector<int> temp;
 	temp.resize(size);
-	for (int i = 0; i < size; i++)
+	for (i = 0; i < size; i++)
 		temp[i] = orientation[change_p[i] - 1];          
 	return temp;  
 }
 
-static std::vector<int> applySubmoveP(std::vector<int> permutation, int change_p[], int size)
+static std::vector<int> applySubmoveP(std::vector<int> permutation, int change_p[], unsigned int size)
 {
 	if (size != permutation.size()){
 		std::cerr << "Vectors not matching in size in call to applySubmoveP(...)\n";
@@ -66,7 +74,7 @@ static std::vector<int> applySubmoveP(std::vector<int> permutation, int change_p
 	}
 	std::vector<int> temp;
 	temp.resize(size);
-	for (int i = 0; i < size; i++)
+	for (unsigned int i = 0; i < size; i++)
 		temp[i] = permutation[change_p[i] - 1];          
 	return temp;  
 }
@@ -137,14 +145,14 @@ static bool limitMatches(MoveLimit& limit, fullmove& move) {
 	return limit.name == (limit.moveGroup ? move.parentMove : move.name);
 }
 
-static void processMoveLimits(MoveList* moves, std::vector<MoveLimit> limits) {
-	int i;
+static void processMoveLimits(MoveList& moves, std::vector<MoveLimit> limits) {
+	unsigned int i;
 	MoveList::iterator iter;
 	for (i=0; i<limits.size(); i++) {
-		iter = (*moves).begin();
-		while (iter != (*moves).end()) {
+		iter = moves.begin();
+		while (iter != moves.end()) {
 			if (limits[i].limit <= 0 && limitMatches(limits[i], iter->second)) {
-				(*moves).erase(iter++);
+				moves.erase(iter++);
 			} else {
 				iter++;
 			}

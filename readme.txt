@@ -268,6 +268,9 @@ It is possible to define all of the centers together as one piece group in this 
 ###### Version History ######
 
 (ksolve+)
+1.2  More gcc optimization = code runs way faster. Who knew?
+     Other optimizations to speed up puzzles with Blocks or permutation-only piece types
+     Various code improvements
 1.1  Fixed some small bugs in ForbiddenMoves and scramble reading
      Made orientation vectors optional
      Moved MoveLimits to scramble file

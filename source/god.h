@@ -22,7 +22,7 @@
 #ifndef GOD_H
 #define GOD_H
 
-static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, std::set<MovePair>& forbiddenPairs, Position& ignore, std::set<Block>& blocks, int metric){
+static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, std::set<MovePair>& forbiddenPairs, Position& ignore, std::vector<Block>& blocks, int metric){
 	// compute size of puzzle
 	// this pair<string,int> holds the piece set name and the type of data:
 	//		0 (orientation with parity constraint),
@@ -33,36 +33,37 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 	
 	Position::iterator iter;
 	for (iter = solved.begin(); iter != solved.end(); iter++) {
+		int size = solved[iter->first].size;
 		if (datasets[iter->first].oparity) {
 			// Orientation, parity constraint
 			long long tablesize = 1;
-			for (int i = 0; i < solved[iter->first].size - 1; i++)
+			for (int i = 0; i < size - 1; i++)
 				tablesize *= datasets[iter->first].omod;
 			subSizes.insert(std::pair<std::pair<string, int>, long long>
 					(std::pair<string, int> (iter->first, 0), tablesize));
 		} else {
 			// Orientation, no parity constraint
 			long long tablesize = 1;
-			for (int i = 0; i < solved[iter->first].size; i++)
+			for (int i = 0; i < size; i++)
 				tablesize *= datasets[iter->first].omod;
 			subSizes.insert(std::pair<std::pair<string, int>, long long>
 					(std::pair<string, int> (iter->first, 1), tablesize));
 		}
 		
-		if (factorial(datasets[iter->first].size) != -1 && uniquePermutation(solved[iter->first].permutation, solved[iter->first].size)){
+		if (factorial(datasets[iter->first].size) != -1 && uniquePermutation(solved[iter->first].permutation, size)){
 			// Permutation, unique pieces
-			std::vector<int> temp_perm;
-			for (int i = 0; i < solved[iter->first].size; i++)
-				temp_perm.push_back(solved[iter->first].permutation[i]);
-			long long tablesize = factorial(temp_perm.size());
+			std::vector<int> temp_perm (size);
+			for (int i = 0; i < size; i++)
+				temp_perm[i] = solved[iter->first].permutation[i];
+			long long tablesize = factorial(size);
 			subSizes.insert(std::pair<std::pair<string, int>, long long>
 				(std::pair<string, int> (iter->first, 2), tablesize));
 		}
 		else {
 			// Permutation, not unique pieces
-			std::vector<int> temp_perm;
-			for (int i = 0; i < solved[iter->first].size; i++)
-				temp_perm.push_back(solved[iter->first].permutation[i]);
+			std::vector<int> temp_perm (size);
+			for (int i = 0; i < size; i++)
+				temp_perm[i] = solved[iter->first].permutation[i];
 			long long tablesize = combinations(temp_perm);
 			subSizes.insert(std::pair<std::pair<string, int>, long long>
 				(std::pair<string, int> (iter->first, 3), tablesize));
@@ -138,7 +139,7 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 					// try all possible moves and see if that position hasn't been visited
 					for (moveIter = moves.begin(); moveIter != moves.end(); moveIter++){
 						if (using_blocks) // see if the blocks will prevent this move
-							if (!blocklegal(temp1, blocks, moveIter->second.state))
+							if (!blockLegal(temp1, blocks, moveIter->second.state))
 								continue;
 					
 						// apply move and pack new position
@@ -176,7 +177,7 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 					// try all possible moves and see if that position hasn't been visited
 					for (moveIter = moves.begin(); moveIter != moves.end(); moveIter++){
 						if (using_blocks) // see if the blocks will prevent this move
-							if (!blocklegal(temp1, blocks, moveIter->second.state))
+							if (!blockLegal(temp1, blocks, moveIter->second.state))
 								continue;
 					
 						// apply move and pack new position

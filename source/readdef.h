@@ -142,8 +142,8 @@ public:
 							}
 						}
 						
-						for (int i = 0; i < group.size(); i++){
-							for (int j = 0; j < group.size(); j++){
+						for (unsigned int i = 0; i < group.size(); i++){
+							for (unsigned int j = 0; j < group.size(); j++){
 								forbidden.insert(MovePair(group[i], group[j]));
 							}
 						}
@@ -192,7 +192,7 @@ public:
 						tmp_block[setname] = tmp;
 						fin >> setname;
 					}
-					blocks.insert(tmp_block);
+					blocks.push_back(tmp_block);
 				}
 				else if (command == "MoveLimits"){
 					std::cout << "MoveLimits command has been moved to scramble file!\n";
@@ -273,7 +273,7 @@ public:
 		return ignore;
 	}
 
-	std::set<Block> getBlocks(){
+	std::vector<Block> getBlocks(){
 		return blocks;
 	}
 	
@@ -289,7 +289,7 @@ private:
 	MoveList moves; // Possible moves of the puzzle
 	std::vector<string> parentMoves; // Names of parent moves
 	std::set<MovePair> forbidden;
-	std::set<Block> blocks;
+	std::vector<Block> blocks;
 	std::map<string, std::vector<string> > moveGroups;
 	std::map<string, int> moveLimits; // limits on # of moves
 	
@@ -315,7 +315,7 @@ private:
 		do {
 			move2.state = mergeMoves(move2.state, fixedState, datasets);
 			order++;
-		} while (!isEqual(move2.state, fixedState));
+		} while (!isEqual(move2.state, fixedState, datasets));
 		
 		// Add derived moves
 		int i, j;
@@ -361,7 +361,7 @@ private:
 	
 	// determine which moves are parallel, and process them
 	void processParallelMoves() {
-		int i, j;
+		unsigned int i, j;
 		MoveList::iterator iter1, iter2;
 		Position ij, ji;
 		
@@ -374,7 +374,7 @@ private:
 				ji.clear();
 				ij = mergeMoves(moves[parentMoves[i]].state, moves[parentMoves[j]].state, datasets);
 				ji = mergeMoves(moves[parentMoves[j]].state, moves[parentMoves[i]].state, datasets);
-				if (isEqual(ij, ji)) {
+				if (isEqual(ij, ji, datasets)) {
 					
 					// if so, forbid any move with parent i followed by any move with parent j
 					for (iter1 = moves.begin(); iter1 != moves.end(); iter1++) {

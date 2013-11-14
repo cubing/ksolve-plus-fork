@@ -23,38 +23,41 @@
 #define INDEXING_H
 
 static int oVector2Index(std::vector<int> orientations, int omod) {
-	for (int i = 0; i < orientations.size(); i++)
+	/* this loop should be unnecessary
+	for (unsigned int i = 0; i < orientations.size(); i++) {
 		orientations[i] = orientations[i] % omod;
+	}*/
 		
 	int tmp = 0;
-	for (int i = 0; i < orientations.size(); i++){
-		tmp *= omod;
-		tmp += orientations[i];
+	for (unsigned int i = 0; i < orientations.size(); i++){
+		tmp = tmp*omod + orientations[i];
 	}
 	return tmp;
 }
 
 static int oVector2Index(int orientations[], int size, int omod) {
-	for (int i = 0; i < size; i++)
+	/* this loop should be unnecessary
+	for (int i = 0; i < size; i++) {
 		orientations[i] = orientations[i] % omod;
+	}*/
 		
 	int tmp = 0;
 	for (int i = 0; i < size; i++){
-		tmp *= omod;
-		tmp += orientations[i];
+		tmp = tmp*omod + orientations[i];
 	}
 	return tmp;
 }
 
 // version of oVector2Index for orientation with parity constraint
 static int oparVector2Index(int orientations[], int size, int omod) {
-	for (int i = 0; i < size; i++)
+	/* this loop should be unnecessary
+	for (int i = 0; i < size; i++) {
 		orientations[i] = orientations[i] % omod;
+	}*/
 		
 	int tmp = 0;
 	for (int i = 0; i < size - 1; i++){
-		tmp *= omod;
-		tmp += orientations[i];
+		tmp = tmp*omod + orientations[i];
 	}
 	return tmp;
 }
@@ -147,7 +150,6 @@ static long long pVector3Index(std::vector<int> permutation) {
 	if (permutation.size() == 1)
 		return 0;
 	long long index = 0;
-	int max = 0;
 	std::vector<int> temp_vec;
 	std::vector<int>::iterator iter;
 	for (int i = 1; i < permutation[0]; i++){
@@ -167,27 +169,28 @@ static long long pVector3Index(std::vector<int> permutation) {
 
 static long long pVector3Index(int permutation[], int size) {
 	// Quick and ugly, but it works for now
-	std::vector<int> temp_vec;
+	std::vector<int> temp_vec (size);
 	for (int i = 0; i < size; i++)
-		temp_vec.push_back(permutation[i]);
+		temp_vec[i] = permutation[i];
 	
 	return pVector3Index(temp_vec);
 }
 
 static std::vector<int> pIndex3Vector(long long index, std::vector<int> solved) {
-	int vec_length = solved.size();
+	unsigned int vec_length = solved.size();
 	std::vector<int> vec;
 	std::vector<int> temp_vec1, temp_vec2;
 	std::vector<int>::iterator iter;
 	vec.resize(vec_length);
 	int max = solved[0];
-	for (int i = 0; i < solved.size(); i++)
+	unsigned int i;
+	int j;
+	for (i = 0; i < solved.size(); i++)
 		if (max < solved[i])
 			max = solved[i];
 			
 	temp_vec1 = solved;
-	for (int i = 0; i < vec_length; i++){
-		int j;
+	for (i = 0; i < vec_length; i++){
 		for (j = 0; j <= max; j++){
 			temp_vec2 = temp_vec1;
 			iter = find(temp_vec2.begin(), temp_vec2.end(), j);
@@ -218,10 +221,10 @@ static int* pIndex3Array(long long index, int* solved, int size) {
 			max = solved[i];
 			
 	int* vec = new int[size];
-	std::vector<int> temp_vec1, temp_vec2;
+	std::vector<int> temp_vec1 (size), temp_vec2;
 	std::vector<int>::iterator iter;
 	for (i = 0; i<size; i++) {
-		temp_vec1.push_back(solved[i]);
+		temp_vec1[i] = solved[i];
 	}
 	
 	for (i = 0; i < size; i++){
@@ -247,7 +250,7 @@ static int* pIndex3Array(long long index, int* solved, int size) {
 static long long combinations(std::vector<int> vec) {
 	std::map<int, int> counter;
 	std::map<int, int>::iterator iter;
-	for (int i = 0; i < vec.size(); i++){
+	for (unsigned int i = 0; i < vec.size(); i++){
 		if (counter.find(vec[i]) == counter.end())
 			counter[vec[i]] = 1;
 		else
@@ -303,71 +306,46 @@ static long long factorial(long long x) {
 }
 
 static std::vector<long long> packVector(std::vector<int> vec){
-	std::vector<long long> result;
-	std::vector<int> temp;
-	for (int i = 0; i < 8; i++)
-		temp.push_back(0);
-		
-	for (int i = 0; i < vec.size(); i++){
-		temp[i % 8] = vec[i];
-		if (i % 8 == 7 || i == vec.size() - 1){
-			result.push_back(packSubVector(temp));
-			for (int i = 0; i < 8; i++)
-				temp[i] = 0;
-		}
+	unsigned int size = vec.size();
+	std::vector<long long> result (1 + size/8);
+	
+	for (unsigned int i = 0; i < size; i += 8) {
+		long long element = 0;
+		for (unsigned int j = 0; j < 8; j++)
+			if (i+j < size) element += ((long long)vec[i+j]) << (8*j);
+		result[i/8] = element;
 	}
+	
 	return result;
 }
-            
+       
 static std::vector<long long> packVector(int vec[], int size){
-	std::vector<long long> result;
-	std::vector<int> temp;
-	for (int i = 0; i < 8; i++)
-		temp.push_back(0);
-		
-	for (int i = 0; i < size; i++){
-		temp[i % 8] = vec[i];
-		if (i % 8 == 7 || i == size - 1){
-			result.push_back(packSubVector(temp));
-			for (int i = 0; i < 8; i++)
-				temp[i] = 0;
-		}
+	std::vector<long long> result (1 + size/8);
+	
+	for (int i = 0; i < size; i += 8) {
+		long long element = 0;
+		for (int j = 0; j < 8; j++)
+			if (i+j < size) element += ((long long)vec[i+j]) << (8*j);
+		result[i/8] = element;
 	}
 	return result;
-}
-
-static long long packSubVector(std::vector <int> vec){
-	long long result = 0;
-	for (int i = 0; i < vec.size(); i++){
-		long long tmp = vec[i];
-		result += (tmp << (8*i));
-	}
-	return result;         
 }
 
 static std::vector<int> unpackVector(std::vector<long long> vec){
-	std::vector <int> result;
-	for (int i = 0; i < vec.size(); i++){
-		std::vector<int> tmp;
-		tmp = unpackSubVector(vec[i]);
-		for (int j = 0; j < tmp.size(); j++)
-			result.push_back(tmp[j]);
-		tmp.clear();
+	unsigned int size = vec.size();
+	std::vector<int> result (8*size);
+	
+	for (unsigned int i = 0; i < size; i++){
+		long long number = vec[i];
+		for (int j = 0; j < 8; j++){
+			result[i*8+j] = (number & 0xFF);
+			number = (number >> 8);
+		}
 	}
+	while(result[result.size() - 1] == 0)
+			result.pop_back();
+	
 	return result;
-}
-
-static std::vector<int> unpackSubVector(long long number){
-	std::vector<int> temp;
-	for (int i = 0; i < 8; i++)
-		temp.push_back(0);
-	for (int i = 0; i < 8; i++){
-		temp[i] = (number & 0x00000000000000FF);
-		number = (number >> 8);
-	}
-	while(temp[temp.size() - 1] == 0)
-		temp.pop_back();
-	return temp;
 }
 
 #endif

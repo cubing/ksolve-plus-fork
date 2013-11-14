@@ -65,7 +65,7 @@ struct ksolve {
 		MoveList moves = ruleset.getMoves();
 		std::set<MovePair> forbidden = ruleset.getForbiddenPairs();
 		Position ignore = ruleset.getIgnore();
-		std::set<Block> blocks = ruleset.getBlocks();
+		std::vector<Block> blocks = ruleset.getBlocks();
 		std::cout << "Ruleset loaded.\n";
 		
 		// Print all generated moves
@@ -95,12 +95,12 @@ struct ksolve {
 		std::string godQTM = "!q";
 		if (0==godHTM.compare(argv[2])) {
 			std::cout << "Computing God's Algorithm tables (HTM)\n";
-			bool success = godTable(solved, moves, datasets, forbidden, ignore, blocks, 0);
+			godTable(solved, moves, datasets, forbidden, ignore, blocks, 0);
 			std::cout << "Time: " << (clock() - start) / (double)CLOCKS_PER_SEC << "s\n";
 			return EXIT_SUCCESS;
 		} else if (0==godQTM.compare(argv[2])) {
 			std::cout << "Computing God's Algorithm tables (QTM)\n";
-			bool success = godTable(solved, moves, datasets, forbidden, ignore, blocks, 1);
+			godTable(solved, moves, datasets, forbidden, ignore, blocks, 1);
 			std::cout << "Time: " << (clock() - start) / (double)CLOCKS_PER_SEC << "s\n";
 			return EXIT_SUCCESS;
 		}
@@ -148,7 +148,7 @@ struct ksolve {
 			for (iter2 = moves.begin(); iter2 != moves.end(); iter2++){
 				moves2[iter2->first] = iter2->second;
 			}
-			processMoveLimits(&moves2, scramble.moveLimits);
+			processMoveLimits(moves2, scramble.moveLimits);
 			
 			std::cout << "Depth 0\n";
 	 

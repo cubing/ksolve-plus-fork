@@ -25,7 +25,7 @@
 class Scramble
 {
 public:
-	Scramble(string filename, Position& solved, MoveList& moves, PieceTypes datasets, std::set<Block>& blocks){
+	Scramble(string filename, Position& solved, MoveList& moves, PieceTypes datasets, std::vector<Block>& blocks){
 		sent = 0;
 		int current_max = 999;
 		int current_slack = 0;
@@ -50,7 +50,7 @@ public:
 				if (name.size() >= 1) name = name.substr(1);
 			 
 				string setname, tmpStr;
-				long i, tmpInt;
+				long i;
 				fin >> setname;
 				state.clear();
 				ignore.clear();
@@ -157,7 +157,7 @@ public:
 				scramble.metric = current_metric;
 				scramble.printState = 0;
 				scramble.moveLimits = std::vector<MoveLimit>();
-				for (int i=0; i<moveLimits.size(); i++) {
+				for (unsigned int i=0; i<moveLimits.size(); i++) {
 					scramble.moveLimits.push_back(moveLimits[i]);
 				}
 				states.push_back(scramble);
@@ -206,7 +206,7 @@ public:
 						exit(-1);
 					}
 					if (blocks.size() != 0) {
-						if (!blocklegal(state, blocks, moves[movename].state)) {
+						if (!blockLegal(state, blocks, moves[movename].state)) {
 							std::cerr << "Move " << movename << " in scramble " << name << " is blocked.\n";
 							exit(-1);
 						}
@@ -234,7 +234,7 @@ public:
 				scramble.metric = current_metric;
 				scramble.printState = 1;
 				scramble.moveLimits = std::vector<MoveLimit>();
-				for (int i=0; i<moveLimits.size(); i++) {
+				for (unsigned int i=0; i<moveLimits.size(); i++) {
 					scramble.moveLimits.push_back(moveLimits[i]);
 				}
 				states.push_back(scramble);
@@ -289,7 +289,7 @@ public:
 					std::advance(iter2, rand() % nMoves);
 					
 					if (blocks.size() != 0) {
-						if (!blocklegal(state, blocks, iter2->second.state)) {
+						if (!blockLegal(state, blocks, iter2->second.state)) {
 							i--;
 							continue;
 						}
@@ -317,7 +317,7 @@ public:
 				scramble.metric = current_metric;
 				scramble.printState = 1;
 				scramble.moveLimits = std::vector<MoveLimit>();
-				for (int i=0; i<moveLimits.size(); i++) {
+				for (unsigned int i=0; i<moveLimits.size(); i++) {
 					scramble.moveLimits.push_back(moveLimits[i]);
 				}
 				states.push_back(scramble);
@@ -429,7 +429,7 @@ public:
 private:
 	std::vector<ScrambleDef> states;
 	std::vector<MoveLimit> moveLimits;
-	int sent;
+	unsigned int sent;
 };
 
 #endif

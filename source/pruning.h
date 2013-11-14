@@ -77,13 +77,12 @@ static PruneTable getCompletePruneTables(Position solved, MoveList moves, PieceT
 
 		Position::iterator iter;
 		for (iter = solved.begin(); iter != solved.end(); iter++){
-
-			if (factorial(datasets[iter->first].size) <= MAX_COMPLETE_PERMUTATION_TABLE_SIZE && factorial(datasets[iter->first].size) != -1 && uniquePermutation(solved[iter->first].permutation, solved[iter->first].size)){ 
+			int size = solved[iter->first].size;
+			if (datasets[iter->first].size != size) std::cout << "WTF\n";
+			if (factorial(size) <= MAX_COMPLETE_PERMUTATION_TABLE_SIZE && factorial(size) != -1 && uniquePermutation(solved[iter->first].permutation, size)){ 
 				// Complete tables, unique pieces
-				char buff;
-
 				// Read permutation table
-				int tab_size = factorial(datasets[iter->first].size);
+				int tab_size = factorial(size);
 				table[iter->first].permutation.reserve(tab_size);
 
 				char *tmp_buff = new char[tab_size+1];
@@ -94,10 +93,10 @@ static PruneTable getCompletePruneTables(Position solved, MoveList moves, PieceT
 				delete tmp_buff;
 			
 			}
-			else if (combinations(solved[iter->first].permutation, solved[iter->first].size) <= MAX_COMPLETE_PERMUTATION_TABLE_SIZE && combinations(solved[iter->first].permutation, solved[iter->first].size) != -1 && !uniquePermutation(solved[iter->first].permutation, solved[iter->first].size)){ 
+			else if (combinations(solved[iter->first].permutation, size) <= MAX_COMPLETE_PERMUTATION_TABLE_SIZE && combinations(solved[iter->first].permutation, size) != -1 && !uniquePermutation(solved[iter->first].permutation, size)){ 
 				// Complete table, non-unique pieces
 				char buff;
-				int tab_size = combinations(solved[iter->first].permutation, solved[iter->first].size);
+				int tab_size = combinations(solved[iter->first].permutation, size);
 				for (int i = 0; i < tab_size; i++){
 					fin.read((char*) (&buff), sizeof(buff));
 					table[iter->first].permutation.push_back(buff);
@@ -126,22 +125,20 @@ static PruneTable getCompletePruneTables(Position solved, MoveList moves, PieceT
 				table[iter->first].partialpermutation_depth = maxDepth(table[iter->first].partialpermutation);
 			}
 
-			double osize = log(datasets[iter->first].omod) * datasets[iter->first].size;
+			double osize = log(datasets[iter->first].omod) * size;
 			if (osize < log(MAX_COMPLETE_ORIENTATION_TABLE_SIZE)){ // Not to big tables. Using log to avoid overflow.
-				char buff;
 				long long num = 1;
-				for (int t = 0; t < datasets[iter->first].size; t++)
+				for (int t = 0; t < size; t++)
 					num *= datasets[iter->first].omod;
-
-					 table[iter->first].orientation.reserve(num);
-	 
-					 char *tmp_buff = new char[num+1];
-					 fin.get(tmp_buff, num+1, 'A');
-					 for (int i = 0; i < num; i++){
-						 table[iter->first].orientation.push_back(tmp_buff[i]);
-					 }
-					 delete tmp_buff;
-				
+					
+					table[iter->first].orientation.reserve(num);
+					
+					char *tmp_buff = new char[num+1];
+					fin.get(tmp_buff, num+1, 'A');
+					for (int i = 0; i < num; i++){
+						table[iter->first].orientation.push_back(tmp_buff[i]);
+					}
+					delete tmp_buff;
 			}    
 			else{ // Partial orientation tables
 				int elements, keysize;
@@ -180,17 +177,19 @@ static PruneTable getCompletePruneTables(Position solved, MoveList moves, PieceT
 		fout.write((char*) (&checksum), sizeof(checksum));
 		Position::iterator iter;
 		for (iter = solved.begin(); iter != solved.end(); iter++){
-			if (factorial(datasets[iter->first].size) <= MAX_COMPLETE_PERMUTATION_TABLE_SIZE && factorial(datasets[iter->first].size) != -1 && uniquePermutation(solved[iter->first].permutation, solved[iter->first].size)){
+			int size = solved[iter->first].size;
+			if (datasets[iter->first].size != size) std::cout << "WTF\n";
+			if (factorial(size) <= MAX_COMPLETE_PERMUTATION_TABLE_SIZE && factorial(size) != -1 && uniquePermutation(solved[iter->first].permutation, size)){
 
 				// Write permutation table
-				int tab_size = factorial(datasets[iter->first].size);
+				int tab_size = factorial(size);
 				for (int i = 0; i < tab_size; i++){
 					fout.write((char*) (&table[iter->first].permutation[i]), sizeof(table[iter->first].permutation[i]));
 				}
 			}
-			else if (combinations(solved[iter->first].permutation, solved[iter->first].size) <= MAX_COMPLETE_PERMUTATION_TABLE_SIZE && combinations(solved[iter->first].permutation, solved[iter->first].size) != -1){
+			else if (combinations(solved[iter->first].permutation, size) <= MAX_COMPLETE_PERMUTATION_TABLE_SIZE && combinations(solved[iter->first].permutation, size) != -1){
 				// Complete permutation table, not unique pieces
-				int tab_size = combinations(solved[iter->first].permutation, solved[iter->first].size);
+				int tab_size = combinations(solved[iter->first].permutation, size);
 				for (int i = 0; i < tab_size; i++)
 					fout.write((char*) (&table[iter->first].permutation[i]), sizeof(table[iter->first].permutation[i]));
 			}
@@ -209,16 +208,16 @@ static PruneTable getCompletePruneTables(Position solved, MoveList moves, PieceT
 				for (tmp_iter = table[iter->first].partialpermutation.begin(); tmp_iter != table[iter->first].partialpermutation.end(); tmp_iter++){
 					// Depth
 					fout.write((char*) (&tmp_iter->second), sizeof(tmp_iter->second));
-					for (int i = 0; i < tmp_iter->first.size(); i++)
+					for (unsigned int i = 0; i < tmp_iter->first.size(); i++)
 						fout.write((char*) (&(*tmp_iter).first[i]), sizeof(tmp_iter->first[i]));
 						// Keys
 				}
 			}
 
-			double osize = log(datasets[iter->first].omod) * datasets[iter->first].size;
+			double osize = log(datasets[iter->first].omod) * size;
 
 			if (osize < log(MAX_COMPLETE_ORIENTATION_TABLE_SIZE)){ // Not too big tables. Using log to avoid overflow.
-				for (int i = 0; i < table[iter->first].orientation.size(); i++){
+				for (unsigned int i = 0; i < table[iter->first].orientation.size(); i++){
 					fout.write((char*) (&table[iter->first].orientation[i]), sizeof(table[iter->first].orientation[i]));
 				}
 			}
@@ -236,7 +235,7 @@ static PruneTable getCompletePruneTables(Position solved, MoveList moves, PieceT
 				for (tmp_iter = table[iter->first].partialorientation.begin() ; tmp_iter != table[iter->first].partialorientation.end(); tmp_iter++){
 					// Depth
 					fout.write((char*) (&tmp_iter->second), sizeof(tmp_iter->second));
-					for (int i = 0; i < tmp_iter->first.size(); i++)
+					for (unsigned int i = 0; i < tmp_iter->first.size(); i++)
 					// Keys
 						fout.write((char*) (&(*tmp_iter).first[i]), sizeof(tmp_iter->first[i]));
 				}
@@ -254,29 +253,30 @@ static PruneTable buildCompletePruneTables(Position solved, MoveList moves, Piec
 	PruneTable table;
 	std::vector<int> tmp_ignore;
 	for (iter = solved.begin(); iter != solved.end(); iter++){
+		int size = solved[iter->first].size;
 		tmp_ignore.clear();
 		if (ignore.find(iter->first) != ignore.end())
-			for (int i = 0; i < ignore[iter->first].size; i++)
+			for (int i = 0; i < size; i++)
 				tmp_ignore.push_back(ignore[iter->first].permutation[i]);
 			
-		if (factorial(datasets[iter->first].size) <= MAX_COMPLETE_PERMUTATION_TABLE_SIZE && factorial(datasets[iter->first].size) != -1 && uniquePermutation(solved[iter->first].permutation, solved[iter->first].size)){
+		if (factorial(size) <= MAX_COMPLETE_PERMUTATION_TABLE_SIZE && factorial(size) != -1 && uniquePermutation(solved[iter->first].permutation, size)){
 			// Complete table, unique pieces
 			std::vector<int> temp_perm;
-			for (int i = 0; i < solved[iter->first].size; i++)
+			for (int i = 0; i < size; i++)
 				temp_perm.push_back(solved[iter->first].permutation[i]);
 			table[iter->first].permutation = buildCompletePermutationPruningTable(temp_perm, moves, iter->first, tmp_ignore);
 		}
-		else if (combinations(solved[iter->first].permutation, solved[iter->first].size) <= MAX_COMPLETE_PERMUTATION_TABLE_SIZE && combinations(solved[iter->first].permutation, solved[iter->first].size) != -1 && !uniquePermutation(solved[iter->first].permutation, solved[iter->first].size)){
+		else if (combinations(solved[iter->first].permutation, size) <= MAX_COMPLETE_PERMUTATION_TABLE_SIZE && combinations(solved[iter->first].permutation, size) != -1 && !uniquePermutation(solved[iter->first].permutation, size)){
 			// Complete table, not unique pieces
 			std::vector<int> temp_perm;
-			for (int i= 0; i < solved[iter->first].size; i++)
+			for (int i= 0; i < size; i++)
 				temp_perm.push_back(solved[iter->first].permutation[i]);
 			table[iter->first].permutation = buildCompletePermutationPruningTable3(temp_perm, moves, iter->first, tmp_ignore);
 		}
 		else{
 			// Partial permutation table 
 			std::vector<int> temp_perm;
-			for (int i = 0; i < solved[iter->first].size; i++)
+			for (int i = 0; i < size; i++)
 				temp_perm.push_back(solved[iter->first].permutation[i]);
 			table[iter->first].partialpermutation = buildPartialPermutationPruningTable(temp_perm, moves, iter->first, tmp_ignore);
 			table[iter->first].partialpermutation_depth = maxDepth(table[iter->first].partialpermutation);
@@ -284,18 +284,18 @@ static PruneTable buildCompletePruneTables(Position solved, MoveList moves, Piec
 
 		tmp_ignore.clear();
 		if (ignore.find(iter->first) != ignore.end())
-			for (int i = 0; i < ignore[iter->first].size; i++)
+			for (int i = 0; i < size; i++)
 				tmp_ignore.push_back(ignore[iter->first].orientation[i]);
-		double osize = log(datasets[iter->first].omod) * datasets[iter->first].size;
+		double osize = log(datasets[iter->first].omod) * size;
 		if (osize < log(MAX_COMPLETE_ORIENTATION_TABLE_SIZE)){ // Not to big tables. Using log to avoid overflow.
 			std::vector<int> temp_orient;
-			for (int i = 0; i < solved[iter->first].size; i++)
+			for (int i = 0; i < size; i++)
 				temp_orient.push_back(solved[iter->first].orientation[i]);
 			table[iter->first].orientation = buildCompleteOrientationPruningTable(temp_orient , moves, iter->first, datasets[iter->first].omod, tmp_ignore);
 		}
 		else{
 			std::vector<int> temp_orient;
-			for (int i = 0; i < solved[iter->first].size; i++)
+			for (int i = 0; i < size; i++)
 				temp_orient.push_back(solved[iter->first].orientation[i]);
 			table[iter->first].partialorientation = buildPartialOrientationPruningTable(temp_orient, moves, iter->first, datasets[iter->first].omod, tmp_ignore);
 			table[iter->first].partialorientation_depth = maxDepth(table[iter->first].partialorientation);
@@ -311,9 +311,9 @@ static std::vector<char> buildCompleteOrientationPruningTable(std::vector<int> s
 	int vector_size = solved.size();
 	MoveList::iterator iter;
 	int tablesize = 1;
-	for (int i = 0; i < solved.size(); i++)
-		tablesize *= omod;  // tablesize := omod ^ solved.size() 
-							// checking for numbers getting to large might be smart
+	for (unsigned int i = 0; i < solved.size(); i++)
+		tablesize *= omod;  // tablesize = omod to the power of solved.size() 
+							// checking for numbers getting too large might be smart
 		
 	table.resize(tablesize);
 	for (int i = 0; i < tablesize; i++)
@@ -563,7 +563,6 @@ static std::map<std::vector<long long>, char> buildPartialOrientationPruningTabl
 	std::map<std::vector<long long>, char> old_table;
 	std::map<std::vector<long long>, char>::iterator iter2, iter3;
 	MoveList::iterator iter;
-	int tablesize = 1;
 
 	table[packVector(solved)] = 0; // Put solved position in table
 
@@ -577,8 +576,8 @@ static std::map<std::vector<long long>, char> buildPartialOrientationPruningTabl
 		c = 0;
 		for (iter2 = table.begin(); iter2 != table.end(); iter++){
 			if (iter2->second == len && !abort){
+				std::vector<int> pos = unpackVector(iter2->first);
 				for (iter = moves.begin(); iter != moves.end(); iter++){
-					std::vector<int> pos = unpackVector(iter2->first);
 					std::vector<int> q = applySubmoveO(pos, iter->second.state[setname].orientation, iter->second.state[setname].permutation, iter->second.state[setname].size, omod);
 					std::vector<long long> newpos = packVector(q);
 					if (table.find(newpos) == table.end()){
@@ -623,7 +622,7 @@ static std::map<std::vector<long long>, char> buildPartialPermutationPruningTabl
 	if (!ignore.empty()){
 		std::vector<int> repermutation;
 		std::vector<int> first_perm;
-		for (int i = 0; i < ignore.size(); i++)
+		for (unsigned int i = 0; i < ignore.size(); i++)
 			if (ignore[i] == 1)
 				repermutation.push_back(i);
 		if (repermutation.size() > 8){
@@ -636,7 +635,7 @@ static std::map<std::vector<long long>, char> buildPartialPermutationPruningTabl
 			tmp_perm = solved;
 			int v = 0;
 			
-			for (int i = 0; i < solved.size(); i++){
+			for (unsigned int i = 0; i < solved.size(); i++){
 				if (ignore[i] == 1){
 					tmp_perm[i] = solved[repermutation[v]];
 					v++;
@@ -656,8 +655,8 @@ static std::map<std::vector<long long>, char> buildPartialPermutationPruningTabl
 		c = 0;
 		for (iter2 = table.begin(); iter2 != table.end(); iter2++){
 			if (iter2->second == len && !abort){
+				std::vector<int> pos = unpackVector(iter2->first);
 				for (iter = moves.begin(); iter != moves.end(); iter++){
-					std::vector<int> pos = unpackVector(iter2->first);
 					std::vector<int> q = applySubmoveP(pos , iter->second.state[setname].permutation, iter->second.state[setname].size);
 					std::vector<long long> newpos = packVector(q);
 					if (table.find(newpos) == table.end()){

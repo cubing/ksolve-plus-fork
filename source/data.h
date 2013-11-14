@@ -82,6 +82,14 @@ struct fullmove {
 	Position state;
 };
 
+// info about a particular move limit
+struct MoveLimit {
+	string name; // name of move (or parent move) to limit
+	int limit; // maximum number of moves of this type
+	bool moveGroup; // is this a group of moves, or just one?
+	Block owned; // pieces that can only be affected by these moves
+};
+
 struct ScrambleDef {
 	string name;
 	Position state;
@@ -90,6 +98,7 @@ struct ScrambleDef {
 	int slack;
 	int metric; // 0 = HTM, 1 = QTM
 	int printState; // 0 = no, 1 = yes
+	std::vector<MoveLimit> moveLimits;
 };
 
 typedef std::map<string, fullmove> MoveList;

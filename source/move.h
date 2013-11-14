@@ -123,4 +123,33 @@ static void printPosition(Position p) {
 	}
 }
 
+// creates a new, blank substate of given size
+static substate newSubstate(int size) {
+	substate newState;
+	newState.size = size;
+	newState.permutation = new int[size];
+	newState.orientation = new int[size];
+	return newState;
+}
+
+// does this limit apply to this move?
+static bool limitMatches(MoveLimit& limit, fullmove& move) {
+	return limit.name == (limit.moveGroup ? move.parentMove : move.name);
+}
+
+static void processMoveLimits(MoveList* moves, std::vector<MoveLimit> limits) {
+	int i;
+	MoveList::iterator iter;
+	for (i=0; i<limits.size(); i++) {
+		iter = (*moves).begin();
+		while (iter != (*moves).end()) {
+			if (limits[i].limit <= 0 && limitMatches(limits[i], iter->second)) {
+				(*moves).erase(iter++);
+			} else {
+				iter++;
+			}
+		}
+	}
+}
+
 #endif

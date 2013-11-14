@@ -27,7 +27,7 @@ public:
 	Rules(string filename){
 		std::ifstream fin(filename.c_str());
 		if (!fin.good()){
-			std::cout << "Cant open puzzle definition!\n";
+			std::cout << "Can't open puzzle definition!\n";
 			exit(-1);
 		}
 			
@@ -71,94 +71,15 @@ public:
 					newMove.name = movename;
 					newMove.parentMove = movename;
 					newMove.qtm = 1;
+					newMove.state = readPosition(fin, true, false, "move "+movename);
 					
-					fin >> setname;
-					while(setname != "End"){
-						if (datasets.find(setname) == datasets.end()) {
-							std::cerr << "Set " << setname << " used in move " << movename << " not previously declared.\n";
-							exit(-1);
-						}                
-						if (moves[movename].state.find(setname) != moves[movename].state.end()){
-							std::cerr << "Set " << setname << " declared more than once in move " << movename << "\n";
-							exit(-1);
-						}
-
-						newMove.state[setname].size = datasets[setname].size;
-						newMove.state[setname].permutation = new int[newMove.state[setname].size];
-						newMove.state[setname].orientation = new int[newMove.state[setname].size];
-					  
-						for (int i = 0; i < datasets[setname].size; i++){
-							int tmp;
-							fin >> tmp;
-							if (fin.fail()){
-								std::cerr << "Error reading " << setname << " permutation for move " << movename << "\n";
-								exit(-1);
-							}
-							newMove.state[setname].permutation[i] = tmp;
-						}
-						for (int i = 0; i < datasets[setname].size; i++){
-							int tmp;
-							fin >> tmp;
-							if (fin.fail()){
-								std::cerr << "Error reading " << setname << " orientation for move " << movename << "\n";
-								exit(-1);
-							}
-							newMove.state[setname].orientation[i] = tmp;
-						}
-						
-						if (!uniquePermutation(newMove.state[setname].permutation, newMove.state[setname].size)){
-							std::cerr << "Permutation for set " << setname << " for move " << movename << " is not a permutation.\n";
-							exit(-1);
-						}
-						fin >> setname;
-					}
 					parentMoves.push_back(movename);
 					addPowers(newMove, datasets);
 					adjustOParity(datasets, newMove.state);
 					moves[movename] = newMove;
 				}
 				else if (command == "Solved"){
-					string setname;
-					fin >> setname;  
-					while(setname != "End"){
-						if (datasets.find(setname) == datasets.end()) {
-							std::cerr << "Set " << setname << " used in solved state is not previously declared.\n";
-							exit(-1);
-						}                
-
-						if (solved.find(setname) != solved.end()){
-							std::cerr << "Set " << setname << " declared more than once for solved position.\nMultiple solved positions not possible\n";
-							exit(-1);
-						}
-						solved[setname].permutation = new int[datasets[setname].size];
-						solved[setname].orientation = new int[datasets[setname].size];
-						solved[setname].size = datasets[setname].size;
-						if (solved[setname].permutation == NULL || solved[setname].orientation == NULL){
-							std::cerr << "Could not allocate memory in rules(...)\n";
-							exit(-1);
-						}
-						
-						for (int i = 0; i < datasets[setname].size; i++){
-							int tmp;
-							fin >> tmp;
-							if (fin.fail()){
-								std::cerr << "Error reading " << setname << " permutation for solved state.\n";
-								exit(-1);
-							}
-							solved[setname].permutation[i] = tmp;
-						}
-						for (int i = 0; i < datasets[setname].size; i++){
-							int tmp;
-							fin >> tmp;
-							if (fin.fail()){
-								std::cerr << "Error reading " << setname << " orientation for solved state.\n";
-								exit(-1);
-							}
-							solved[setname].orientation[i] = tmp;
-						}
-						datasets[setname].uniqueperm = uniquePermutation(solved[setname].permutation, solved[setname].size);
-						fin >> setname;
-					}
+					solved = readPosition(fin, false, true, "solved state");
 				}
 				else if (command == "ForbiddenPairs"){
 					string movename1, movename2;  
@@ -242,47 +163,7 @@ public:
 					}
 				}
 				else if (command == "Ignore"){
-					string setname;
-					fin >> setname;  
-					while(setname != "End"){
-						if (datasets.find(setname) == datasets.end()) {
-							std::cerr << "Set " << setname << " used in Ignore is not previously declared.\n";
-							exit(-1);
-						}                
-
-						if (ignore.find(setname) != ignore.end()){
-							std::cerr << "Set " << setname << " declared more than once in ignore.\n";
-							exit(-1);
-						}
-						
-						ignore[setname].permutation = new int[datasets[setname].size];
-						ignore[setname].orientation = new int[datasets[setname].size];
-						ignore[setname].size = datasets[setname].size;
-						if (ignore[setname].permutation == NULL || ignore[setname].orientation == NULL){
-							std::cerr << "Could not allocate memory in rules(...)\n";
-							exit(-1);
-						}
-
-						for (int i = 0; i < datasets[setname].size; i++){
-							int tmp;
-							fin >> tmp;
-							if (fin.fail()){
-								std::cerr << "Error reading " << setname << " permutation to ignore.\n";
-								exit(-1);
-							}
-							ignore[setname].permutation[i] = tmp;
-						}
-						for (int i = 0; i < datasets[setname].size; i++){
-							int tmp;
-							fin >> tmp;
-							if (fin.fail()){
-								std::cerr << "Error reading " << setname << " orientation to ignore.\n";
-								exit(-1);
-							}
-							ignore[setname].orientation[i] = tmp;     
-						};
-						fin >> setname;
-					}                  
+					ignore = readPosition(fin, false, false, "Ignore command");      
 				}
 				else if (command == "Block"){
 					Block tmp_block;
@@ -314,29 +195,11 @@ public:
 					blocks.insert(tmp_block);
 				}
 				else if (command == "MoveLimits"){
-					string movename;
-					int limit;
-					fin >> movename;
-					while(movename != "End") {
-						if (fin.fail()){
-							std::cerr << "Error reading move limits.\n";
-							exit(-1);
-						}
-						if (moves.find(movename) == moves.end()){
-							std::cerr << "Move " << movename << " used in move list is not previously declared.\n";
-							exit(-1);
-						}
-						
-						fin >> limit;
-						if (fin.fail()){
-							std::cerr << "Error reading move limits.\n";
-							exit(-1);
-						}
-						
-						string baseMove = moves[movename].parentMove;
-						moveLimits.insert(std::pair<string, int> (baseMove, limit));
-						
-						fin >> movename;
+					std::cout << "MoveLimits command has been moved to scramble file!\n";
+					string newmove;
+					fin >> newmove;
+					while(newmove != "End") {
+						fin >> newmove;
 					}
 				}
 				else if (command == "#"){ // Comment
@@ -390,6 +253,46 @@ public:
 		}
 	}
 
+	PieceTypes getDatasets(){
+		return datasets;
+	}
+
+	Position getSolved(){
+		return solved;
+	}
+
+	MoveList getMoves(){
+		return moves;
+	}
+
+	std::set<MovePair> getForbiddenPairs(){
+		return forbidden;
+	}
+
+	Position getIgnore(){
+		return ignore;
+	}
+
+	std::set<Block> getBlocks(){
+		return blocks;
+	}
+	
+	std::map<string, int> getMoveLimits() {
+		return moveLimits;
+	}
+	
+private:
+	string name; // The name of the puzzle
+	PieceTypes datasets; // Size and properties of the state-data
+	Position solved;
+	Position ignore; // 0 = solve piece, 1 = don't solve piece
+	MoveList moves; // Possible moves of the puzzle
+	std::vector<string> parentMoves; // Names of parent moves
+	std::set<MovePair> forbidden;
+	std::set<Block> blocks;
+	std::map<string, std::vector<string> > moveGroups;
+	std::map<string, int> moveLimits; // limits on # of moves
+	
 	// Add all powers of this move, and keep track of them in moveGroups
 	void addPowers(fullmove move, PieceTypes& datasets) {
 		std::vector<string> moveGroup;
@@ -399,9 +302,7 @@ public:
 		Position fixedState; // fix state to remove weird orientations
 		Position::iterator iter;
 		for (iter = move.state.begin(); iter != move.state.end(); iter++){
-			fixedState[iter->first].size = iter->second.size;
-			fixedState[iter->first].orientation = new int[iter->second.size];
-			fixedState[iter->first].permutation = new int[iter->second.size];
+			fixedState[iter->first] = newSubstate(iter->second.size);
 			for (int i=0; i<iter->second.size; i++) {
 				fixedState[iter->first].orientation[i] = move.state[iter->first].orientation[i] % datasets[iter->first].omod;
 				fixedState[iter->first].permutation[i] = move.state[iter->first].permutation[i];
@@ -480,7 +381,10 @@ public:
 						if (0 == iter1->second.parentMove.compare(parentMoves[i])) {
 							for (iter2 = moves.begin(); iter2 != moves.end(); iter2++) {
 								if (0 == iter2->second.parentMove.compare(parentMoves[j])) {
-									forbidden.insert(MovePair(iter1->second.name, iter2->second.name));
+									// if we have not already forbidden the [j,i] move pair, forbid the [i,j] one
+									if (forbidden.find(MovePair(iter2->second.name, iter1->second.name)) == forbidden.end()) {
+										forbidden.insert(MovePair(iter1->second.name, iter2->second.name));
+									}
 								}
 							}
 						}
@@ -489,46 +393,82 @@ public:
 			}
 		}
 	}
-
-	PieceTypes getDatasets(){
-		return datasets;
-	}
-
-	Position getSolved(){
-		return solved;
-	}
-
-	MoveList getMoves(){
-		return moves;
-	}
-
-	std::set<MovePair> getForbiddenPairs(){
-		return forbidden;
-	}
-
-	Position getIgnore(){
-		return ignore;
-	}
-
-	std::set<Block> getBlocks(){
-		return blocks;
-	}
 	
-	std::map<string, int> getMoveLimits() {
-		return moveLimits;
+	// read in a position from fin
+	Position readPosition(std::ifstream& fin, bool checkUnique, bool setUnique, string title) {
+		Position newPosition;
+		string setname, tmpStr;
+		long i, tmpInt;
+		fin >> setname;
+		while (setname != "End") {
+			// check that this set is defined, but not used in this position yet
+			if (datasets.find(setname) == datasets.end()) {
+				std::cerr << "Set " << setname << " used in " << title << " is not previously declared.\n";
+				exit(-1);
+			} 
+			if (newPosition.find(setname) != newPosition.end()) {
+				std::cerr << "Set " << setname << " defined more than once in " << title << ".\n";
+				exit(-1);
+			}
+			
+			// create new substate
+			newPosition[setname] = newSubstate(datasets[setname].size);
+			if (newPosition[setname].permutation == NULL || newPosition[setname].orientation == NULL){
+				std::cerr << "Could not allocate memory in " << title << ".\n";
+				exit(-1);
+			}
+						
+			// read in permutation
+			for (i = 0; i < datasets[setname].size; i++){
+				fin >> tmpInt;
+				if (fin.fail()){
+					std::cerr << "Error reading " << setname << " permutation in " << title << ".\n";
+					exit(-1);
+				}
+				newPosition[setname].permutation[i] = tmpInt;
+			}
+			
+			// do unique permutation stuff
+			if (checkUnique) {
+				if (!uniquePermutation(newPosition[setname].permutation, newPosition[setname].size)){
+					std::cerr << "Permutation for set " << setname << " in " << title << " has repeated numbers.\n";
+					exit(-1);
+				}
+			}
+			if (setUnique) {
+				datasets[setname].uniqueperm = uniquePermutation(newPosition[setname].permutation, newPosition[setname].size);
+			}
+			
+			// set orientation to zeros (in case user did not give it)
+			for (i = 0; i < datasets[setname].size; i++){
+				newPosition[setname].orientation[i] = 0;
+			}
+			
+			// read something in. if it doesn't look like a number,
+			// use it as the setname. otherwise, read in orientation
+			fin >> tmpStr;
+			if (tmpStr.at(0) < '0' || tmpStr.at(0) > '9') {
+				setname = tmpStr;
+				continue;
+			}
+			for (i = 0; i < datasets[setname].size; i++){
+				if (i==0) {
+					tmpInt = atol(tmpStr.c_str());
+				} else {
+					fin >> tmpInt;
+				}
+				if (fin.fail()){
+					std::cerr << "Error reading " << setname << " orientation in " << title << ".\n";
+					exit(-1);
+				}
+				newPosition[setname].orientation[i] = tmpInt;
+			}
+			
+			// get next setname
+			fin >> setname;
+		}
+		return newPosition;
 	}
-	
-private:
-	string name; // The name of the puzzle
-	PieceTypes datasets; // Size and properties of the state-data
-	Position solved;
-	Position ignore; // 0 = solve piece, 1 = don't solve piece
-	MoveList moves; // Possible moves of the puzzle
-	std::vector<string> parentMoves; // Names of parent moves
-	std::set<MovePair> forbidden;
-	std::set<Block> blocks;
-	std::map<string, std::vector<string> > moveGroups;
-	std::map<string, int> moveLimits; // limits on # of moves
 };
 
 #endif

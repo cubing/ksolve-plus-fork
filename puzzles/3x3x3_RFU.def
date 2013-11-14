@@ -1,0 +1,39 @@
+Name 3x3x3, <R,F,U>
+
+# .def file by Michael Gottlieb
+# CORNERS URF ULF ULB URB DRF DLF DRB
+# EDGES UF UL UB UR FR FL BL BR DF DL DB DR
+
+Set CORNERS 7 3
+Set EDGES 9 2
+
+Solved
+CORNERS
+1 2 3 4 5 6 7
+EDGES
+1 2 3 4 5 6 7 8 9
+End
+
+Move U
+CORNERS
+4 1 2 3 5 6 7
+EDGES
+4 1 2 3 5 6 7 8 9
+End
+
+Move R
+CORNERS
+5 2 3 1 7 6 4
+1 0 0 2 2 0 1
+EDGES
+1 2 3 5 9 6 4 8 7
+0 0 0 1 1 0 1 0 1
+End
+
+Move F
+CORNERS
+2 6 3 4 1 5 7
+2 1 0 0 1 2 0
+EDGES
+6 2 3 4 1 8 7 5 9
+End

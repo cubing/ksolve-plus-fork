@@ -1,0 +1,87 @@
+Name Pyraminx
+
+# def-file by Kåre Krig
+
+# Put puzzle flat on a table, with one side facing you.
+# Possible turns would then be U,L,R,B
+
+# The pyramid shaped tops are not considered by the program.
+# But should not pose a problem to anyone.
+
+# Centers (inner three colored pieces)
+# 1 U
+# 2 L
+# 3 R
+# 4 B
+
+# Centers orientation
+# 0 solved
+# 1 twisted one step clockwise
+# 2 twisted one step counter clockwise
+
+# Edges (two colored pieces)
+# UL = the slot/piece touching both the U and L centers.
+# 1 UL
+# 2 UR
+# 3 UB
+# 4 LR
+# 5 RB
+# 6 LB
+
+# Edges orientation
+# 0 correct, 1 wrong
+# Pieces 1,2,3 in the upper layer are correct if they would 
+# be correct after a single U-move.
+# Pieces 1,2,3 in the lower layer are correct if they would be 
+# correct after being moved to the top layer with a clockwise 
+# twist.
+# Pieces 4,5,6 in the lower layer are correct it the bottom 
+# color is the right one.
+# Pieces 4,5,6 in the upper layer are correct if they would be 
+# correct after being moved to the bottom layer with a counter 
+# clockwise turn.
+
+Set EDGES 6 2
+Set CENTERS 4 3
+
+Solved 
+EDGES 
+1 2 3 4 5 6 
+CENTERS
+1 2 3 4
+End
+
+Move U 
+EDGES 
+2 3 1 4 5 6 
+CENTERS
+1 2 3 4
+1 0 0 0
+End
+
+Move R
+EDGES
+1 4 3 5 2 6
+0 1 0 0 1 0
+CENTERS
+1 2 3 4
+0 0 1 0
+End
+
+Move L
+EDGES
+6 2 3 1 5 4
+1 0 0 1 0 0
+CENTERS
+1 2 3 4
+0 1 0 0
+End
+
+Move B
+EDGES
+1 2 5 4 6 3
+0 0 1 0 0 1
+CENTERS
+1 2 3 4
+0 0 0 1
+End

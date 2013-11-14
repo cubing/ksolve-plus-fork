@@ -1,0 +1,35 @@
+Name Helicopter Cube 3-gen
+
+# Corners: UFR, UFL, UBR, DFR
+# Centers: Flu Ufr Rub; Urb Ruf Frd; Rdf Fur Ulf
+
+Set CORNERS 4 1
+Set CENTERS 9 1
+
+Solved
+CORNERS
+1 2 3 4
+CENTERS
+1 2 3 4 5 6 7 8 9
+End
+
+Move UF
+CORNERS
+2 1 3 4
+CENTERS
+2 1 3 4 5 6 7 9 8
+End
+
+Move UR
+CORNERS
+3 2 1 4
+CENTERS
+1 3 2 5 4 6 7 8 9
+End
+
+Move RF
+CORNERS
+4 2 3 1
+CENTERS
+1 2 3 4 6 5 8 7 9
+End

@@ -1,0 +1,58 @@
+Name 3x3x3 <M,R,r,U>
+
+# Edges: UF UR UB UL DF DR DB FR BR
+# Corners: UBL UBR UFR UFL DBR DFR
+# Centers: U F D B
+
+Set EDGES 9 2
+Set CORNERS 6 3
+Set CENTERS 4 1
+
+Solved 
+EDGES 
+1 2 3 4 5 6 7 8 9
+CORNERS
+1 2 3 4 5 6
+CENTERS
+1 2 3 4
+End
+
+Move U
+EDGES
+2 3 4 1 5 6 7 8 9
+CORNERS
+4 1 2 3 5 6
+CENTERS
+1 2 3 4
+End
+
+Move R
+EDGES
+1 8 3 4 5 9 7 6 2
+CORNERS
+1 3 6 4 2 5
+0 2 1 0 1 2
+CENTERS
+1 2 3 4
+End
+
+Move r
+EDGES
+5 8 1 4 7 9 3 6 2
+1 0 1 0 1 0 1 0 0
+CORNERS
+1 3 6 4 2 5
+0 2 1 0 1 2
+CENTERS
+2 3 4 1
+End
+
+Move M
+EDGES
+3 2 7 4 1 6 5 8 9
+1 0 1 0 1 0 1 0 0
+CORNERS
+1 2 3 4 5 6
+CENTERS
+4 1 2 3
+End

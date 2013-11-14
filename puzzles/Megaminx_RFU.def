@@ -1,0 +1,38 @@
+Name Megaminx <R,F,U>
+
+# Edges: UBR UBL UL UF UR RF RDF RDB RB FDR FDL FL
+# Corners: UB UL UFL UFR UR RF RD RB DF DFL
+
+Set EDGES 12 2
+Set CORNERS 10 3
+
+Solved 
+EDGES
+1 2 3 4 5 6 7 8 9 10 11 12
+CORNERS
+1 2 3 4 5 6 7 8 9 10
+End
+
+Move U
+EDGES
+2 3 4 5 1 6 7 8 9 10 11 12
+CORNERS
+2 3 4 5 1 6 7 8 9 10
+End
+
+Move R
+EDGES
+1 2 3 4 6 7 8 9 5 10 11 12
+CORNERS
+1 2 3 6 4 7 8 5 9 10
+0 0 0 1 2 2 0 1 0 0
+End
+
+Move F
+EDGES
+1 2 3 12 5 4 7 8 9 6 10 11
+0 0 0 1 0 1 0 0 0 1 0 1
+CORNERS
+1 2 10 3 5 4 7 8 6 9
+0 0 1 2 0 1 0 0 0 2
+End

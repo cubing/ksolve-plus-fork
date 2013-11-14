@@ -1,0 +1,357 @@
+/*
+ KSolve+ - Puzzle solving program.
+ Copyright (C) 2007-2013 Kåre Krig and Michael Gottlieb
+
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU General Public License
+ as published by the Free Software Foundation; either version 2
+ of the License, or (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with this program; if not, write to the Free Software
+ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
+
+// Functions for reading the scramble file
+
+#ifndef SCRAMBLE_H
+#define SCRAMBLE_H
+
+class Scramble
+{
+public:
+	Scramble(string filename, Position& solved, MoveList& moves, PieceTypes datasets, std::set<Block>& blocks){
+		sent = 0;
+		int current_max = 999;
+		int current_slack = 0;
+		int current_metric = 0;
+		Position state;
+		Position ignore;
+		string name;
+		std::ifstream fin(filename.c_str());
+		if (!fin.good()){
+			std::cout << "Cant open scramble file!\n";
+			exit(-1);
+		}
+	   
+		while(!fin.eof()){
+			string command;
+			fin >> command;
+
+			// Scramble - read a single scramble's definition
+			if (command == "Scramble"){
+				getline(fin, name);
+				name = name.substr(1);
+			 
+				string setname;
+				fin >> setname;
+				state.clear();
+				ignore.clear();
+				while(setname != "End"){
+					if (fin.fail()){
+						std::cerr << "Error reading scramble sets.\n";
+						exit(-1);
+					}
+				
+					// Check set names for consistency
+					if (state.find(setname) != state.end()){
+						std::cerr << "Set " << setname << " declared more than once in scrambled position.\n";
+						exit(-1);
+					}
+					if (datasets.find(setname) == datasets.end()){
+						std::cerr << "Set " << setname << " in scramble not found in def-file.\n";
+						exit(-1);
+					}
+				
+					// initialize some info
+					state[setname].permutation = new int[datasets[setname].size];
+					state[setname].orientation = new int[datasets[setname].size];
+					state[setname].size = datasets[setname].size;
+					ignore[setname].permutation = new int[datasets[setname].size];
+					ignore[setname].orientation = new int[datasets[setname].size];
+					ignore[setname].size = datasets[setname].size;
+					if (state[setname].permutation == NULL || state[setname].orientation == NULL ||
+						ignore[setname].permutation == NULL || ignore[setname].orientation == NULL){
+						std::cerr << "Can't allocate memory in Scramble::Scramble(...)\n";
+						exit(-1);
+					}
+
+					// read in the data
+					for (int i = 0; i < datasets[setname].size; i++){
+						string tmp;
+						fin >> tmp;
+						if (fin.fail()){
+							std::cerr << "Error reading " << setname << " permutation for the scramble.\n";
+							exit(-1);
+						}
+						if (tmp.at(0) == (char) '?') {
+							ignore[setname].permutation[i] = 1;
+							if (tmp.size() == 1) { // just a ?
+								state[setname].permutation[i] = -1;
+								
+								// throw an error message if using blocks
+								if (blocks.size() != 0) {
+									std::cerr << "Cannot use unknown permutations on puzzles with blocks!\n";
+									exit(-1);
+								}
+							} else { // ? and then a number
+								string tmp2 = tmp.substr(1);
+								state[setname].permutation[i] = atol(tmp2.c_str());
+							}
+						} else {
+							state[setname].permutation[i] = atol(tmp.c_str());
+							ignore[setname].permutation[i] = 0;
+						}
+					}
+					for (int i = 0; i < datasets[setname].size; i++){
+						string tmp;
+						fin >> tmp;
+						if (fin.fail()){
+							std::cerr << "Error reading " << setname << " orientation for the scramble.\n";
+							exit(-1);
+						}
+						if (tmp.at(0) == (char) '?') {
+							ignore[setname].orientation[i] = 1;
+							if (tmp.size() == 1) { // just a ?
+								state[setname].orientation[i] = 0;
+							} else { // ? and then a number
+								string tmp2 = tmp.substr(1);
+								state[setname].orientation[i] = atol(tmp2.c_str());
+							}
+						} else {
+							int tmp2 = atoi(tmp.c_str()) % datasets[setname].omod;
+							if (tmp2 < 0)
+								tmp2 += datasets[setname].omod;
+							state[setname].orientation[i] = tmp2;
+							ignore[setname].orientation[i] = 0;
+						}
+					}
+				
+					fin >> setname;
+				}
+				
+				ScrambleDef scramble;
+				scramble.name = name;
+				scramble.state = state;
+				scramble.ignore = ignore;
+				scramble.max_depth = current_max;
+				scramble.slack = current_slack;
+				scramble.metric = current_metric;
+				scramble.printState = 0;
+				states.push_back(scramble);
+			}
+			// ScrambleAlg - read a scramble as a set of moves
+			else if (command == "ScrambleAlg"){
+				getline(fin, name);
+				name = name.substr(1);
+				
+				// initialize state to solved, and ignore to empty
+				state.clear();
+				ignore.clear();
+				Position new_state;
+				PieceTypes::iterator iter;
+				for (iter = datasets.begin(); iter != datasets.end(); iter++)
+				{
+					int size = iter->second.size;
+					state[iter->first].permutation = new int[size];
+					state[iter->first].orientation = new int[size];
+					state[iter->first].size = size;
+					ignore[iter->first].permutation = new int[size];
+					ignore[iter->first].orientation = new int[size];
+					ignore[iter->first].size = size;
+					new_state[iter->first].permutation = new int[size];
+					new_state[iter->first].orientation = new int[size];
+					new_state[iter->first].size = size;
+					if (state[iter->first].permutation == NULL || state[iter->first].orientation == NULL ||
+						ignore[iter->first].permutation == NULL || ignore[iter->first].orientation == NULL){
+						std::cerr << "Can't allocate memory in Scramble::Scramble(...)\n";
+						exit(-1);
+					}
+					for (int i=0; i<size; i++) {
+						state[iter->first].permutation[i] = solved[iter->first].permutation[i];
+						state[iter->first].orientation[i] = solved[iter->first].orientation[i];
+						ignore[iter->first].permutation[i] = 0;
+						ignore[iter->first].orientation[i] = 0;
+					}
+				}
+					
+				string movename;
+				fin >> movename;
+				while(movename != "End"){
+					if (fin.fail()){
+						std::cerr << "Error reading scramble sets.\n";
+						exit(-1);
+					}
+					
+					// apply move called movename to solved, if possible
+					if (moves.find(movename) == moves.end()){
+						std::cerr << "Move " << movename << " in scramble " << name << " is unknown.\n";
+						exit(-1);
+					}
+					if (blocks.size() != 0) {
+						if (!blocklegal(state, blocks, moves[movename].state)) {
+							std::cerr << "Move " << movename << " in scramble " << name << " is blocked.\n";
+							exit(-1);
+						}
+					}
+					applyMove(state, new_state, moves[movename].state, datasets);
+					
+					// copy new_state to state
+					for (iter = datasets.begin(); iter != datasets.end(); iter++)
+					{
+						int size = iter->second.size;
+						for (int i=0; i<size; i++) {
+							state[iter->first].permutation[i] = new_state[iter->first].permutation[i];
+							state[iter->first].orientation[i] = new_state[iter->first].orientation[i];
+						}
+					}
+				
+					fin >> movename;
+				}
+				
+				ScrambleDef scramble;
+				scramble.name = name;
+				scramble.state = state;
+				scramble.ignore = ignore;
+				scramble.max_depth = current_max;
+				scramble.slack = current_slack;
+				scramble.metric = current_metric;
+				scramble.printState = 1;
+				states.push_back(scramble);
+			}
+			// RandomScramble - read a scramble as a set of moves
+			else if (command == "RandomScramble"){
+				getline(fin, name);
+				name = name.substr(1);
+				
+				// initialize state to solved, and ignore to empty
+				state.clear();
+				ignore.clear();
+				Position new_state;
+				PieceTypes::iterator iter;
+				for (iter = datasets.begin(); iter != datasets.end(); iter++)
+				{
+					int size = iter->second.size;
+					state[iter->first].permutation = new int[size];
+					state[iter->first].orientation = new int[size];
+					state[iter->first].size = size;
+					ignore[iter->first].permutation = new int[size];
+					ignore[iter->first].orientation = new int[size];
+					ignore[iter->first].size = size;
+					new_state[iter->first].permutation = new int[size];
+					new_state[iter->first].orientation = new int[size];
+					new_state[iter->first].size = size;
+					if (state[iter->first].permutation == NULL || state[iter->first].orientation == NULL ||
+						ignore[iter->first].permutation == NULL || ignore[iter->first].orientation == NULL){
+						std::cerr << "Can't allocate memory in Scramble::Scramble(...)\n";
+						exit(-1);
+					}
+					for (int i=0; i<size; i++) {
+						state[iter->first].permutation[i] = solved[iter->first].permutation[i];
+						state[iter->first].orientation[i] = solved[iter->first].orientation[i];
+						ignore[iter->first].permutation[i] = 0;
+						ignore[iter->first].orientation[i] = 0;
+					}
+				}
+					
+				string movename;
+				fin >> movename;
+				while(movename != "End"){
+					if (fin.fail()){
+						std::cerr << "Error reading scramble sets.\n";
+						exit(-1);
+					}
+				
+					fin >> movename;
+				}
+				
+				// apply a bunch of random moves
+				int RANDOM_MOVES = 10000 + (rand()%2);
+				int nMoves = moves.size();
+				for (int i=0; i<RANDOM_MOVES; i++) {
+					// get random move
+					MoveList::iterator iter2 = moves.begin();
+					std::advance(iter2, rand() % nMoves);
+					
+					if (blocks.size() != 0) {
+						if (!blocklegal(state, blocks, iter2->second.state)) {
+							i--;
+							continue;
+						}
+					}
+					
+					applyMove(state, new_state, iter2->second.state, datasets);
+					
+					// copy new_state to state
+					for (iter = datasets.begin(); iter != datasets.end(); iter++)
+					{
+						int size = iter->second.size;
+						for (int i=0; i<size; i++) {
+							state[iter->first].permutation[i] = new_state[iter->first].permutation[i];
+							state[iter->first].orientation[i] = new_state[iter->first].orientation[i];
+						}
+					}
+				}
+				
+				ScrambleDef scramble;
+				scramble.name = name;
+				scramble.state = state;
+				scramble.ignore = ignore;
+				scramble.max_depth = current_max;
+				scramble.slack = current_slack;
+				scramble.metric = current_metric;
+				scramble.printState = 1;
+				states.push_back(scramble);
+			}
+			// MaxDepth - maximum depth to search to
+			else if (command == "MaxDepth"){
+				fin >> current_max;
+				if (fin.fail()){
+					std::cerr << "Error reading MaxDepth\n";
+					exit(-1);
+				}
+			}
+			// Slack - extra depth after optimal
+			else if (command == "Slack"){
+				fin >> current_slack;
+				if (fin.fail()){
+					std::cerr << "Error reading Slack\n";
+					exit(-1);
+				}
+			}
+			// QTM - use QTM
+			else if (command == "QTM") {
+				current_metric = 1;
+			}
+			// HTM - use HTM
+			else if (command == "HTM") {
+				current_metric = 0;
+			}
+			else if (command == ""){}  // To avoid trouble with extra rows on the end.
+			else {
+				std::cerr << "Unknown command \"" << command << "\" in scramble file.\n";  
+				exit(-1);
+			}
+		}               
+	}
+	
+	ScrambleDef getScramble(){
+		if (states.size() > sent){
+			sent++;
+			return states[sent-1];
+		}
+		ScrambleDef tmp;
+		return tmp;
+	}
+	
+private:
+	std::vector<ScrambleDef> states;
+	int sent;
+};
+
+#endif

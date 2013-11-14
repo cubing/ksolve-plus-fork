@@ -1,0 +1,12 @@
+Scramble 2-flip
+CORNERS
+1 2 3 4 5 6 7
+2 0 1 0 0 0 0
+End
+
+ScrambleAlg Jperm
+R U R' F' R U R' U' R' F R2 U' R' U'
+End
+
+RandomScramble random!
+End

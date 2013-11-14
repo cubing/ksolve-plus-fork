@@ -1,0 +1,35 @@
+Name MM_RU
+
+# Megaminx, R and U turns only
+# Edges: UBr UBl UL UF UR RF RDf RDb RB
+# Corners: UBrBl ULBl UFL UFR URBr RFDf RDfDb RBDb
+
+Set EDGES 9 1
+Set CORNERS 8 3
+
+Solved 
+EDGES 
+1 2 3 4 5 6 7 8 9
+0 0 0 0 0 0 0 0 0
+CORNERS
+1 2 3 4 5 6 7 8
+0 0 0 0 0 0 0 0
+End
+
+Move U
+EDGES
+2 3 4 5 1 6 7 8 9
+0 0 0 0 0 0 0 0 0
+CORNERS
+2 3 4 5 1 6 7 8
+0 0 0 0 0 0 0 0
+End
+
+Move R
+EDGES
+1 2 3 4 6 7 8 9 5
+0 0 0 0 0 0 0 0 0
+CORNERS
+1 2 3 6 4 7 8 5
+0 0 0 1 2 2 0 1
+End

@@ -117,9 +117,7 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 	Position temp1, temp2;
 	Position::iterator iter3;
 	for (iter3 = solved.begin(); iter3 != solved.end(); iter3++){
-		temp2[iter3->first].permutation = new int[iter3->second.size];
-		temp2[iter3->first].orientation = new int[iter3->second.size];
-		temp2[iter3->first].size = iter3->second.size;
+		temp2[iter3->first] = newSubstate(iter3->second.size);
 	}
 	MoveList::iterator moveIter;
 	if (usingMap) {

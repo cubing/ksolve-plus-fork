@@ -22,7 +22,7 @@
 #ifndef SEARCH_H
 #define SEARCH_H
 
-static bool treeSolve(Position state, Position& solved, MoveList& moves, PieceTypes& datasets, PruneTable& prunetables, std::set<MovePair>& forbiddenPairs, Position& ignore, std::set<Block>& blocks, int depth, int metric, std::map<string, int>& moveLimits, string sequence, string old_move){
+static bool treeSolve(Position state, Position& solved, MoveList& moves, PieceTypes& datasets, PruneTable& prunetables, std::set<MovePair>& forbiddenPairs, Position& ignore, std::set<Block>& blocks, int depth, int metric, std::vector<MoveLimit>& moveLimits, string sequence, string old_move){
 	if (depth <= 0) {
 		if (depth == 0) {
 			if (isSolved(state, solved, ignore)){
@@ -42,9 +42,7 @@ static bool treeSolve(Position state, Position& solved, MoveList& moves, PieceTy
 	bool success = false;
 	Position new_state;
 	for (iter2 = state.begin(); iter2 != state.end(); iter2++){
-		new_state[iter2->first].permutation = new int[iter2->second.size];
-		new_state[iter2->first].orientation = new int[iter2->second.size];
-		new_state[iter2->first].size = iter2->second.size;
+		new_state[iter2->first] = newSubstate(iter2->second.size);
 	}
 	
 	bool using_blocks = (blocks.size() != 0);
@@ -52,19 +50,25 @@ static bool treeSolve(Position state, Position& solved, MoveList& moves, PieceTy
 
 	MoveList::iterator iter;
 	for (iter = moves.begin(); iter != moves.end(); iter++){
+		bool forbidden = false;
 		// Test for forbidden pair
-		if (forbiddenPairs.find(MovePair(old_move, iter->first)) != forbiddenPairs.end()){
-			continue; // forbidden pair
-		}
+		if (forbiddenPairs.find(MovePair(old_move, iter->first)) != forbiddenPairs.end())
+			forbidden = true;
 		// Test for block breaking
 		if (using_blocks)
 			if (!blocklegal(state, blocks, iter->second.state))
-				continue; // move would break block
+				forbidden = true;
 		// Test for limited move
-		if (using_limits)
-			if (moveLimits.find(iter->second.parentMove) != moveLimits.end())
-				if (moveLimits[iter->second.parentMove] <= 0)
-					continue; // no moves left
+		if (using_limits) {
+			for (int i=0; i<moveLimits.size(); i++) {
+				if (moveLimits[i].limit <= 0 && limitMatches(moveLimits[i], iter->second)) {
+					forbidden = true;
+					break;
+				}
+			}
+		}
+		
+		if (forbidden) continue;
 
 		applyMove(state, new_state, iter->second.state, datasets);
 		
@@ -75,16 +79,31 @@ static bool treeSolve(Position state, Position& solved, MoveList& moves, PieceTy
 			newDepth = depth - iter->second.qtm;
 		}
 		
-		if (using_limits)
-			if (moveLimits.find(iter->second.parentMove) != moveLimits.end())
-				moveLimits[iter->second.parentMove]--;
+		if (using_limits) {
+			bool isSolvable = true; // see if we have stumbled into a situation that requires more of the limited moves
+			for (int i=0; i<moveLimits.size(); i++) {
+				if (limitMatches(moveLimits[i], iter->second)) {
+					moveLimits[i].limit--;
+					if (moveLimits[i].limit == 0) {
+						isSolvable = isSolvable && stillSolvable(new_state, solved, ignore, moveLimits[i].owned);
+					}
+				}
+			}
+			if (!isSolvable) {
+				for (int i=0; i<moveLimits.size(); i++)
+					if (limitMatches(moveLimits[i], iter->second))
+						moveLimits[i].limit++;
+				continue;
+			}
+		}
 		
 		if (treeSolve(new_state, solved, moves, datasets, prunetables, forbiddenPairs, ignore, blocks, newDepth, metric, moveLimits, sequence + " " + iter->first, iter->first))
 			success = true;
 		
 		if (using_limits)
-			if (moveLimits.find(iter->second.parentMove) != moveLimits.end())
-				moveLimits[iter->second.parentMove]++;
+			for (int i=0; i<moveLimits.size(); i++)
+				if (limitMatches(moveLimits[i], iter->second))
+					moveLimits[i].limit++;
 	}
 
 	for (iter2 = state.begin(); iter2 != state.end(); iter2++){
@@ -127,6 +146,25 @@ static bool isEqual(Position state1, Position& state2){
 			return false;
 		if (memcmp(iter->second.orientation, state2[iter->first].orientation, iter->second.size*sizeof(int)) != 0)
 			return false;
+	}
+	return true;
+}
+
+// is this position still solvable? i.e. any unsolved, unignored pieces in the block?
+static bool stillSolvable(Position& state, Position& solved, Position& ignore, Block& owned){
+	Block::iterator iter;
+	for (iter = owned.begin(); iter != owned.end(); iter++) {
+		std::set<int>::iterator iter2;
+		string type = iter->first;
+		for (iter2 = owned[type].begin(); iter2 != owned[type].end(); iter2++) {
+			// if not solved and not ignored, return false!
+			if ((ignore[type].permutation[*iter2] == 0 &&
+				state[type].permutation[*iter2] != solved[type].permutation[*iter2]) ||
+				(ignore[type].orientation[*iter2] == 0 &&
+				solved[type].orientation[*iter2] != solved[type].orientation[*iter2])) {
+				return false;
+			}
+		}
 	}
 	return true;
 }

@@ -66,7 +66,6 @@ struct ksolve {
 		std::set<MovePair> forbidden = ruleset.getForbiddenPairs();
 		Position ignore = ruleset.getIgnore();
 		std::set<Block> blocks = ruleset.getBlocks();
-		std::map<string, int> moveLimits = ruleset.getMoveLimits();
 		std::cout << "Ruleset loaded.\n";
 		
 		// Print all generated moves
@@ -142,12 +141,21 @@ struct ksolve {
 				}
 			}
 			
+			// get rid of any moves that are zeroed out in moveLimits
+			// and set .limited for each move
+			MoveList moves2;
+			MoveList::iterator iter2;
+			for (iter2 = moves.begin(); iter2 != moves.end(); iter2++){
+				moves2[iter2->first] = iter2->second;
+			}
+			processMoveLimits(&moves2, scramble.moveLimits);
+			
 			std::cout << "Depth 0\n";
 	 
 			// The tree-search for the solution(s)
 			int usedSlack = 0;
 			while(1) {
-				boolean foundSolution = treeSolve(scramble.state, solved, moves, datasets, tables, forbidden, scramble.ignore, blocks, depth, scramble.metric, moveLimits, temp_a, temp_b);
+				boolean foundSolution = treeSolve(scramble.state, solved, moves, datasets, tables, forbidden, scramble.ignore, blocks, depth, scramble.metric, scramble.moveLimits, temp_a, temp_b);
 				if (foundSolution || usedSlack > 0) {
 					usedSlack++;
 					if (usedSlack > scramble.slack) break;

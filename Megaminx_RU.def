@@ -10,25 +10,20 @@ Set CORNERS 8 3
 Solved 
 EDGES 
 1 2 3 4 5 6 7 8 9
-0 0 0 0 0 0 0 0 0
 CORNERS
 1 2 3 4 5 6 7 8
-0 0 0 0 0 0 0 0
 End
 
 Move U
 EDGES
 2 3 4 5 1 6 7 8 9
-0 0 0 0 0 0 0 0 0
 CORNERS
 2 3 4 5 1 6 7 8
-0 0 0 0 0 0 0 0
 End
 
 Move R
 EDGES
 1 2 3 4 6 7 8 9 5
-0 0 0 0 0 0 0 0 0
 CORNERS
 1 2 3 6 4 7 8 5
 0 0 0 1 2 2 0 1

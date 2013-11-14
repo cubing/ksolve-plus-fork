@@ -33,9 +33,10 @@ public:
 		Position state;
 		Position ignore;
 		string name;
+		moveLimits.clear();
 		std::ifstream fin(filename.c_str());
 		if (!fin.good()){
-			std::cout << "Cant open scramble file!\n";
+			std::cout << "Can't open scramble file!\n";
 			exit(-1);
 		}
 	   
@@ -46,9 +47,10 @@ public:
 			// Scramble - read a single scramble's definition
 			if (command == "Scramble"){
 				getline(fin, name);
-				name = name.substr(1);
+				if (name.size() >= 1) name = name.substr(1);
 			 
-				string setname;
+				string setname, tmpStr;
+				long i, tmpInt;
 				fin >> setname;
 				state.clear();
 				ignore.clear();
@@ -60,38 +62,33 @@ public:
 				
 					// Check set names for consistency
 					if (state.find(setname) != state.end()){
-						std::cerr << "Set " << setname << " declared more than once in scrambled position.\n";
+						std::cerr << "Set " << setname << " declared more than once in scramble " << name << ".\n";
 						exit(-1);
 					}
 					if (datasets.find(setname) == datasets.end()){
-						std::cerr << "Set " << setname << " in scramble not found in def-file.\n";
+						std::cerr << "Unknown set " << setname << " in scramble " << name <<".\n";
 						exit(-1);
 					}
 				
 					// initialize some info
-					state[setname].permutation = new int[datasets[setname].size];
-					state[setname].orientation = new int[datasets[setname].size];
-					state[setname].size = datasets[setname].size;
-					ignore[setname].permutation = new int[datasets[setname].size];
-					ignore[setname].orientation = new int[datasets[setname].size];
-					ignore[setname].size = datasets[setname].size;
+					state[setname] = newSubstate(datasets[setname].size);
+					ignore[setname] = newSubstate(datasets[setname].size);
 					if (state[setname].permutation == NULL || state[setname].orientation == NULL ||
 						ignore[setname].permutation == NULL || ignore[setname].orientation == NULL){
 						std::cerr << "Can't allocate memory in Scramble::Scramble(...)\n";
 						exit(-1);
 					}
 
-					// read in the data
-					for (int i = 0; i < datasets[setname].size; i++){
-						string tmp;
-						fin >> tmp;
+					// read permutation
+					for (i = 0; i < datasets[setname].size; i++){
+						fin >> tmpStr;
 						if (fin.fail()){
-							std::cerr << "Error reading " << setname << " permutation for the scramble.\n";
+							std::cerr << "Error reading " << setname << " permutation for scramble " << name << ".\n";
 							exit(-1);
 						}
-						if (tmp.at(0) == (char) '?') {
+						if (tmpStr.at(0) == '?') {
 							ignore[setname].permutation[i] = 1;
-							if (tmp.size() == 1) { // just a ?
+							if (tmpStr.size() == 1) { // just a ?
 								state[setname].permutation[i] = -1;
 								
 								// throw an error message if using blocks
@@ -100,31 +97,47 @@ public:
 									exit(-1);
 								}
 							} else { // ? and then a number
-								string tmp2 = tmp.substr(1);
+								string tmp2 = tmpStr.substr(1);
 								state[setname].permutation[i] = atol(tmp2.c_str());
 							}
 						} else {
-							state[setname].permutation[i] = atol(tmp.c_str());
+							state[setname].permutation[i] = atol(tmpStr.c_str());
 							ignore[setname].permutation[i] = 0;
 						}
 					}
-					for (int i = 0; i < datasets[setname].size; i++){
-						string tmp;
-						fin >> tmp;
+					
+					// set orientation to zeros (in case user did not give it)
+					for (i = 0; i < datasets[setname].size; i++){
+						state[setname].orientation[i] = 0;
+						ignore[setname].orientation[i] = 0;
+					}
+					
+					// read something in. if it doesn't look like a number,
+					// use it as the setname. otherwise, read in orientation
+					fin >> tmpStr;
+					if (tmpStr.at(0) != '?' && (tmpStr.at(0) < '0' || tmpStr.at(0) > '9')) {
+						setname = tmpStr;
+						continue;
+					}
+					
+					for (i = 0; i < datasets[setname].size; i++){
+						if (i>0) {
+							fin >> tmpStr;
+						}
 						if (fin.fail()){
-							std::cerr << "Error reading " << setname << " orientation for the scramble.\n";
+							std::cerr << "Error reading " << setname << " orientation for scramble " << name << ".\n";
 							exit(-1);
 						}
-						if (tmp.at(0) == (char) '?') {
+						if (tmpStr.at(0) == '?') {
 							ignore[setname].orientation[i] = 1;
-							if (tmp.size() == 1) { // just a ?
+							if (tmpStr.size() == 1) { // just a ?
 								state[setname].orientation[i] = 0;
 							} else { // ? and then a number
-								string tmp2 = tmp.substr(1);
+								string tmp2 = tmpStr.substr(1);
 								state[setname].orientation[i] = atol(tmp2.c_str());
 							}
 						} else {
-							int tmp2 = atoi(tmp.c_str()) % datasets[setname].omod;
+							int tmp2 = atoi(tmpStr.c_str()) % datasets[setname].omod;
 							if (tmp2 < 0)
 								tmp2 += datasets[setname].omod;
 							state[setname].orientation[i] = tmp2;
@@ -143,12 +156,16 @@ public:
 				scramble.slack = current_slack;
 				scramble.metric = current_metric;
 				scramble.printState = 0;
+				scramble.moveLimits = std::vector<MoveLimit>();
+				for (int i=0; i<moveLimits.size(); i++) {
+					scramble.moveLimits.push_back(moveLimits[i]);
+				}
 				states.push_back(scramble);
 			}
 			// ScrambleAlg - read a scramble as a set of moves
 			else if (command == "ScrambleAlg"){
 				getline(fin, name);
-				name = name.substr(1);
+				if (name.size() >= 1) name = name.substr(1);
 				
 				// initialize state to solved, and ignore to empty
 				state.clear();
@@ -158,17 +175,12 @@ public:
 				for (iter = datasets.begin(); iter != datasets.end(); iter++)
 				{
 					int size = iter->second.size;
-					state[iter->first].permutation = new int[size];
-					state[iter->first].orientation = new int[size];
-					state[iter->first].size = size;
-					ignore[iter->first].permutation = new int[size];
-					ignore[iter->first].orientation = new int[size];
-					ignore[iter->first].size = size;
-					new_state[iter->first].permutation = new int[size];
-					new_state[iter->first].orientation = new int[size];
-					new_state[iter->first].size = size;
+					state[iter->first] = newSubstate(size);
+					ignore[iter->first] = newSubstate(size);
+					new_state[iter->first] = newSubstate(size);
 					if (state[iter->first].permutation == NULL || state[iter->first].orientation == NULL ||
-						ignore[iter->first].permutation == NULL || ignore[iter->first].orientation == NULL){
+						ignore[iter->first].permutation == NULL || ignore[iter->first].orientation == NULL ||
+						new_state[iter->first].permutation == NULL || new_state[iter->first].orientation == NULL){
 						std::cerr << "Can't allocate memory in Scramble::Scramble(...)\n";
 						exit(-1);
 					}
@@ -183,13 +195,13 @@ public:
 				string movename;
 				fin >> movename;
 				while(movename != "End"){
-					if (fin.fail()){
-						std::cerr << "Error reading scramble sets.\n";
+					if (fin.fail()) {
+						std::cerr << "Error reading scramble " << name << ".\n";
 						exit(-1);
 					}
 					
 					// apply move called movename to solved, if possible
-					if (moves.find(movename) == moves.end()){
+					if (moves.find(movename) == moves.end()) {
 						std::cerr << "Move " << movename << " in scramble " << name << " is unknown.\n";
 						exit(-1);
 					}
@@ -202,8 +214,7 @@ public:
 					applyMove(state, new_state, moves[movename].state, datasets);
 					
 					// copy new_state to state
-					for (iter = datasets.begin(); iter != datasets.end(); iter++)
-					{
+					for (iter = datasets.begin(); iter != datasets.end(); iter++) {
 						int size = iter->second.size;
 						for (int i=0; i<size; i++) {
 							state[iter->first].permutation[i] = new_state[iter->first].permutation[i];
@@ -222,12 +233,16 @@ public:
 				scramble.slack = current_slack;
 				scramble.metric = current_metric;
 				scramble.printState = 1;
+				scramble.moveLimits = std::vector<MoveLimit>();
+				for (int i=0; i<moveLimits.size(); i++) {
+					scramble.moveLimits.push_back(moveLimits[i]);
+				}
 				states.push_back(scramble);
 			}
 			// RandomScramble - read a scramble as a set of moves
 			else if (command == "RandomScramble"){
 				getline(fin, name);
-				name = name.substr(1);
+				if (name.size() >= 1) name = name.substr(1);
 				
 				// initialize state to solved, and ignore to empty
 				state.clear();
@@ -237,17 +252,12 @@ public:
 				for (iter = datasets.begin(); iter != datasets.end(); iter++)
 				{
 					int size = iter->second.size;
-					state[iter->first].permutation = new int[size];
-					state[iter->first].orientation = new int[size];
-					state[iter->first].size = size;
-					ignore[iter->first].permutation = new int[size];
-					ignore[iter->first].orientation = new int[size];
-					ignore[iter->first].size = size;
-					new_state[iter->first].permutation = new int[size];
-					new_state[iter->first].orientation = new int[size];
-					new_state[iter->first].size = size;
+					state[iter->first] = newSubstate(size);
+					ignore[iter->first] = newSubstate(size);
+					new_state[iter->first] = newSubstate(size);
 					if (state[iter->first].permutation == NULL || state[iter->first].orientation == NULL ||
-						ignore[iter->first].permutation == NULL || ignore[iter->first].orientation == NULL){
+						ignore[iter->first].permutation == NULL || ignore[iter->first].orientation == NULL ||
+						new_state[iter->first].permutation == NULL || new_state[iter->first].orientation == NULL){
 						std::cerr << "Can't allocate memory in Scramble::Scramble(...)\n";
 						exit(-1);
 					}
@@ -263,7 +273,7 @@ public:
 				fin >> movename;
 				while(movename != "End"){
 					if (fin.fail()){
-						std::cerr << "Error reading scramble sets.\n";
+						std::cerr << "Error reading scramble " << name << ".\n";
 						exit(-1);
 					}
 				
@@ -306,6 +316,10 @@ public:
 				scramble.slack = current_slack;
 				scramble.metric = current_metric;
 				scramble.printState = 1;
+				scramble.moveLimits = std::vector<MoveLimit>();
+				for (int i=0; i<moveLimits.size(); i++) {
+					scramble.moveLimits.push_back(moveLimits[i]);
+				}
 				states.push_back(scramble);
 			}
 			// MaxDepth - maximum depth to search to
@@ -332,6 +346,69 @@ public:
 			else if (command == "HTM") {
 				current_metric = 0;
 			}
+			// Move Limits
+			else if (command == "MoveLimits"){
+				moveLimits.clear();
+				string movename;
+				int limit;
+				fin >> movename;
+				while(movename != "End") {
+					if (fin.fail() || movename.size() < 1) {
+						std::cerr << "Error reading move limits.\n";
+						exit(-1);
+					}
+					
+					// get basic elements of movelimit
+					MoveLimit ml;
+					ml.moveGroup = (movename.at(movename.size()-1) == '*');
+					if (ml.moveGroup)
+						movename = movename.substr(0, movename.size()-1);
+					
+					if (moves.find(movename) == moves.end()) {
+						std::cerr << "Move " << movename << " used in move list is not previously declared.\n";
+						exit(-1);
+					}
+					fin >> limit;
+					if (fin.fail()){
+						std::cerr << "Error reading move limits.\n";
+						exit(-1);
+					}
+					ml.name = movename;
+					ml.limit = limit;
+					
+					// calculate block
+					Block owned;
+					PieceTypes::iterator pieceIter;
+					MoveList::iterator moveIter;
+					// for each type of piece...
+					for (pieceIter = datasets.begin(); pieceIter != datasets.end(); pieceIter++) {
+						int size = pieceIter->second.size;
+						owned[pieceIter->first] = std::set<int>();
+						// for each individual piece...
+						for (int i=0; i<size; i++) {
+							// if all moves affecting it are limited here...
+							bool allLimited = true;
+							for (moveIter = moves.begin(); moveIter != moves.end(); moveIter++) {
+								if (moveIter->second.state[pieceIter->first].permutation[i] != i+1 || moveIter->second.state[pieceIter->first].orientation[i] != 0) {
+									if (!limitMatches(ml, moveIter->second)) {
+										allLimited = false;
+									}
+								}
+							}
+
+							// ...add it to the block
+							if (allLimited) {
+								owned[pieceIter->first].insert(i);
+							}
+						}
+					}
+					ml.owned = owned;				
+					
+					moveLimits.push_back(ml);
+				
+					fin >> movename;
+				}
+			}
 			else if (command == ""){}  // To avoid trouble with extra rows on the end.
 			else {
 				std::cerr << "Unknown command \"" << command << "\" in scramble file.\n";  
@@ -351,6 +428,7 @@ public:
 	
 private:
 	std::vector<ScrambleDef> states;
+	std::vector<MoveLimit> moveLimits;
 	int sent;
 };
 

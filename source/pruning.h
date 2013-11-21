@@ -414,7 +414,7 @@ static std::vector<char> buildCompletePermutationPruningTable(std::vector<int> s
 		for (int p = 0; p < tablesize; p++){
 			if (table[p] == len){
 				for (iter = moves.begin(); iter != moves.end(); iter++){
-					int q = pVector2Index(applySubmoveP(pIndex2Vector(p, vector_size), iter->second.state[setname].permutation, iter->second.state[setname].size));
+					int q = pVector2Index(applySubmoveP(pIndex2Array(p, vector_size), iter->second.state[setname].permutation, vector_size), vector_size);
 					if (table[q] == -1){
 						table[q] = len + 1;
 						c++;
@@ -433,7 +433,7 @@ static std::vector<char> buildCompletePermutationPruningTable(std::vector<int> s
 		c = 0;
 		for (int i = 0; i < tablesize; i++){
 			if (table[i] != -1){
-				std::vector<int> tmp_p = pIndex2Vector(i, vector_size);
+				int* tmp_p = pIndex2Array(i, vector_size);
 				bool solved_pos = true;
 				for (int j = 0; j < vector_size; j++)
 					if (ignore[j] == 0 && tmp_p[j] != solved[j])
@@ -444,6 +444,7 @@ static std::vector<char> buildCompletePermutationPruningTable(std::vector<int> s
 				}
 				else
 					table[i] = -1;
+				delete tmp_p;
 			}
 		}
 		std::cout << c << " solved positions.\n";
@@ -455,7 +456,7 @@ static std::vector<char> buildCompletePermutationPruningTable(std::vector<int> s
 			for (int p = 0; p < tablesize; p++){
 				if (table[p] == len){
 					for (iter = moves.begin(); iter != moves.end(); iter++){
-						int q = pVector2Index(applySubmoveP(pIndex2Vector(p, vector_size), iter->second.state[setname].permutation, iter->second.state[setname].size));
+						int q = pVector2Index(applySubmoveP(pIndex2Array(p, vector_size), iter->second.state[setname].permutation, vector_size), vector_size);
 						if (table[q] == -1){
 							table[q] = len + 1;
 							c++;
@@ -497,7 +498,7 @@ static std::vector<char> buildCompletePermutationPruningTable3(std::vector<int> 
 			if (table[p] == len){
 				for (iter = moves.begin(); iter != moves.end(); iter++){
 					// FIX, assumes that inverses to all moves are also one move
-					int q = pVector3Index(applySubmoveP(pIndex3Vector(p, solved), iter->second.state[setname].permutation, iter->second.state[setname].size));
+					int q = pVector3Index(applySubmoveP(pIndex3Array(p, solved), iter->second.state[setname].permutation, vector_size), vector_size);
 					// FIX
 					if (table[q] == -1){
 						table[q] = len + 1;
@@ -515,7 +516,7 @@ static std::vector<char> buildCompletePermutationPruningTable3(std::vector<int> 
 		c = 0;
 		for (int i = 0; i < tablesize; i++){
 			if (table[i] != -1){
-				std::vector<int> tmp_p = pIndex3Vector(i, solved);
+				int* tmp_p = pIndex3Array(i, solved);
 				bool solved_pos = true;
 				for (int j = 0; j < vector_size; j++)
 					if (ignore[j] == 0 && tmp_p[j] != solved[j])
@@ -526,6 +527,7 @@ static std::vector<char> buildCompletePermutationPruningTable3(std::vector<int> 
 				}
 				else
 					table[i] = -1;
+				delete tmp_p;
 			}
 		}
 		std::cout << c << " solved positions.\n";
@@ -539,7 +541,7 @@ static std::vector<char> buildCompletePermutationPruningTable3(std::vector<int> 
 				if (table[p] == len){
 					for (iter = moves.begin(); iter != moves.end(); iter++){
 						// FIX, assumes that inverses to all moves are also one move
-						int q = pVector3Index(applySubmoveP(pIndex3Vector(p, solved), iter->second.state[setname].permutation, iter->second.state[setname].size));
+						int q = pVector3Index(applySubmoveP(pIndex3Array(p, solved), iter->second.state[setname].permutation, vector_size), vector_size);
 						// FIX
 						if (table[q] == -1){
 							table[q] = len + 1;

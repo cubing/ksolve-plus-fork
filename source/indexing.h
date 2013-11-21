@@ -22,25 +22,13 @@
 #ifndef INDEXING_H
 #define INDEXING_H
 
+// Convert vector of orientations into an index
 static int oVector2Index(std::vector<int> orientations, int omod) {
-	/* this loop should be unnecessary
-	for (unsigned int i = 0; i < orientations.size(); i++) {
-		orientations[i] = orientations[i] % omod;
-	}*/
-		
-	int tmp = 0;
-	for (unsigned int i = 0; i < orientations.size(); i++){
-		tmp = tmp*omod + orientations[i];
-	}
-	return tmp;
+	return oVector2Index(orientations.data(), orientations.size(), omod);
 }
 
+// Convert array of orientations into an index
 static int oVector2Index(int orientations[], int size, int omod) {
-	/* this loop should be unnecessary
-	for (int i = 0; i < size; i++) {
-		orientations[i] = orientations[i] % omod;
-	}*/
-		
 	int tmp = 0;
 	for (int i = 0; i < size; i++){
 		tmp = tmp*omod + orientations[i];
@@ -48,13 +36,8 @@ static int oVector2Index(int orientations[], int size, int omod) {
 	return tmp;
 }
 
-// version of oVector2Index for orientation with parity constraint
+// Convert array of orientations (with parity constraint) into an index
 static int oparVector2Index(int orientations[], int size, int omod) {
-	/* this loop should be unnecessary
-	for (int i = 0; i < size; i++) {
-		orientations[i] = orientations[i] % omod;
-	}*/
-		
 	int tmp = 0;
 	for (int i = 0; i < size - 1; i++){
 		tmp = tmp*omod + orientations[i];
@@ -62,6 +45,7 @@ static int oparVector2Index(int orientations[], int size, int omod) {
 	return tmp;
 }
 
+// Convert orientation index into a vector
 static std::vector<int> oIndex2Vector(int index, int size, int omod) {
 	std::vector<int> orientations;
 	orientations.resize(size);
@@ -72,7 +56,7 @@ static std::vector<int> oIndex2Vector(int index, int size, int omod) {
 	return orientations;         
 }
 
-// Non-vector version of oIndex2Vector
+// Convert orientation index into an array
 static int* oIndex2Array(int index, int size, int omod) {
 	int* orientation = new int[size];
 	for (int i = size - 1; i >= 0; i--){
@@ -82,7 +66,7 @@ static int* oIndex2Array(int index, int size, int omod) {
 	return orientation;         
 }
 
-// version of oIndex2Array for orientation with parity constraint
+// Convert orientation index (with parity constraint) into an array
 static int* oparIndex2Array(int index, int size, int omod) {
 	int* orientation = new int[size];
 	orientation[size - 1] = 0;
@@ -95,18 +79,12 @@ static int* oparIndex2Array(int index, int size, int omod) {
 	return orientation;         
 }
 
+// Convert permutation vector (unique) into an index
 static int pVector2Index(std::vector<int> permutation) {
-	int t = 0;
-	int size = permutation.size();
-	for (int i = 0; i < size - 1; i++){
-		t *= (size - i);
-		for (int j = i+1; j<size; j++)
-			if (permutation[i] > permutation[j])
-				t++;
-	}
-	return t;
+	return pVector2Index(permutation.data(), permutation.size());
 }
 
+// Convert permutation array (unique) into an index
 static int pVector2Index(int permutation[], int size) {
 	int t = 0;
 	for (int i = 0; i < size - 1; i++){
@@ -118,21 +96,7 @@ static int pVector2Index(int permutation[], int size) {
 	return t;
 }
 
-static std::vector<int> pIndex2Vector(int index, int size) {
-	std::vector<int> permutation;
-	permutation.resize(size);
-	permutation[size-1] = 1;
-	for (int i = size - 2; i >= 0; i--){
-		permutation[i] = 1 + (index % (size-i));
-		index /= (size - i);
-		for (int j = i+1; j < size; j++)
-			if (permutation[j] >= permutation[i])
-				permutation[j]++;
-	}
-	return permutation;
-}
-
-// Non-vector version of pIndex2Vector
+// Convert index into a permutation array (unique)
 static int* pIndex2Array(int index, int size) {
 	int* permutation = new int[size];
 	permutation[size-1] = 1;
@@ -146,128 +110,105 @@ static int* pIndex2Array(int index, int size) {
 	return permutation;
 }
 
+// Convert permutation vector (non-unique) into an index
 static long long pVector3Index(std::vector<int> permutation) {
-	if (permutation.size() == 1)
-		return 0;
-	long long index = 0;
-	std::vector<int> temp_vec;
-	std::vector<int>::iterator iter;
-	for (int i = 1; i < permutation[0]; i++){
-		temp_vec = permutation;
-		
-		iter = find(temp_vec.begin(), temp_vec.end(), i);
-		if (iter != temp_vec.end()){
-			temp_vec.erase(iter);
-			index += combinations(temp_vec);
-		}
+	return pVector3Index(permutation.data(), permutation.size());
+}
+
+// Convert permutation array (non-unique) into an index
+static long long pVector3Index(int permutation[], unsigned int size) {
+	if (size < 2) return 0;
+	int index = 0;
+	
+	// compute number of times each element appears
+	std::map<int, int> counts;
+	for (unsigned int i = 0; i < size; i++){
+		if (counts.find(permutation[i]) == counts.end())
+			counts[permutation[i]] = 1;
+		else
+			counts[permutation[i]]++;
 	}
-	temp_vec = permutation;
-	temp_vec.erase(temp_vec.begin());
-	index += pVector3Index(temp_vec);
+	
+	// compute combinations
+	long long comb = factorial(size);
+	if (comb == -1){ // Too big :(
+		return -1;
+	}
+	std::map<int, int>::iterator iter;
+	for (iter = counts.begin(); iter != counts.end(); iter++)
+		comb /= factorial(iter->second);
+	
+	unsigned int vecsize = size;
+	for (unsigned int ptr = 0; ptr < size; ptr++) {
+		for (int i=1; i < permutation[ptr]; i++) {
+			if (counts[i] > 0) { // i still in permutation
+				// add the number of combinations of our permutation without one i
+				index += (comb * counts[i])/vecsize;
+			}
+		}
+		// "remove" the first element of the permutation
+		comb = (comb * counts[permutation[ptr]])/vecsize;
+		vecsize--;
+		counts[permutation[ptr]]--;
+	}
+	
 	return index;
 }
 
-static long long pVector3Index(int permutation[], int size) {
-	// Quick and ugly, but it works for now
-	std::vector<int> temp_vec (size);
-	for (int i = 0; i < size; i++)
-		temp_vec[i] = permutation[i];
-	
-	return pVector3Index(temp_vec);
+// Convert index into a permutation array (non-unique)
+static int* pIndex3Array(long long index, std::vector<int> solved) {
+	return pIndex3Array(index, solved.data(), solved.size());
 }
 
-static std::vector<int> pIndex3Vector(long long index, std::vector<int> solved) {
-	unsigned int vec_length = solved.size();
-	std::vector<int> vec;
-	std::vector<int> temp_vec1, temp_vec2;
-	std::vector<int>::iterator iter;
-	vec.resize(vec_length);
-	int max = solved[0];
-	unsigned int i;
-	int j;
-	for (i = 0; i < solved.size(); i++)
-		if (max < solved[i])
-			max = solved[i];
-			
-	temp_vec1 = solved;
-	for (i = 0; i < vec_length; i++){
-		for (j = 0; j <= max; j++){
-			temp_vec2 = temp_vec1;
-			iter = find(temp_vec2.begin(), temp_vec2.end(), j);
-			if (iter != temp_vec2.end()){
-				temp_vec2.erase(iter);
-				int num = combinations(temp_vec2);
+// Convert index into a permutation array (non-unique)
+static int* pIndex3Array(long long index, int* solved, int size) {
+	int* vec = new int[size];
+	
+	// compute number of times each element appears
+	std::map<int, int> counts;
+	std::map<int, int>::iterator iter;
+	for (int i = 0; i < size; i++){
+		if (counts.find(solved[i]) == counts.end())
+			counts[solved[i]] = 1;
+		else
+			counts[solved[i]]++;
+	}
+	
+	// compute combinations
+	long long comb = factorial(size);
+	int combsize = size;
+	if (comb == -1){ // Too big, WTF?
+		return solved;
+	}
+	for (iter = counts.begin(); iter != counts.end(); iter++)
+		comb /= factorial(iter->second);
+	
+	// now build vec
+	for (int i=0; i < size; i++) {
+		// loop over each thing in solved
+		for (iter = counts.begin(); iter != counts.end(); iter++) {
+			// if this thing is still in our permutation
+			if (iter->second > 0) {
+				// get the number of combinations of the permutation without one thing
+				long long num = (comb * iter->second)/combsize;
+				// if we can subtract it from index, do so; otherwise we found the ith thing
 				if (num <= index)
 					index -= num;
 				else
 					break;
 			}
 		}
-		vec[i] = j;
-		iter = find(temp_vec1.begin(), temp_vec1.end(), j);
-		temp_vec1.erase(iter);
-	}
-	return vec;
-}
-
-// Non-vector version of pIndex3Vector
-static int* pIndex3Array(long long index, int* solved, int size) {
-	int i, j;
-	
-	// Determine maximum value in solved array
-	int max = solved[0];
-	for (int i = 0; i < size; i++)
-		if (max < solved[i])
-			max = solved[i];
-			
-	int* vec = new int[size];
-	std::vector<int> temp_vec1 (size), temp_vec2;
-	std::vector<int>::iterator iter;
-	for (i = 0; i<size; i++) {
-		temp_vec1[i] = solved[i];
-	}
-	
-	for (i = 0; i < size; i++){
-		for (j = 0; j <= max; j++){
-			temp_vec2 = temp_vec1;
-			iter = find(temp_vec2.begin(), temp_vec2.end(), j);
-			if (iter != temp_vec2.end()){
-				temp_vec2.erase(iter);
-            int num = combinations(temp_vec2);
-            if (num <= index)
-				index -= num;
-            else
-				break;
-			}
-		}
-		vec[i] = j;
-		iter = find(temp_vec1.begin(), temp_vec1.end(), j);
-		temp_vec1.erase(iter);
+		// store this thing, and "remove" the first element of solved
+		vec[i] = iter->first;
+		comb = (comb * iter->second)/combsize;
+		combsize--;
+		counts[iter->first]--;
 	}
 	return vec;
 }
 
 static long long combinations(std::vector<int> vec) {
-	std::map<int, int> counter;
-	std::map<int, int>::iterator iter;
-	for (unsigned int i = 0; i < vec.size(); i++){
-		if (counter.find(vec[i]) == counter.end())
-			counter[vec[i]] = 1;
-		else
-			counter[vec[i]]++;
-	}
-	
-	int sum = 0;
-	for (iter = counter.begin(); iter != counter.end(); iter++){
-		sum += iter->second;
-	}
-	long long comb = factorial(sum);
-	if (comb == -1){ // Too big to compute
-		return -1;
-	}
-	for (iter = counter.begin(); iter != counter.end(); iter++)
-		comb /= factorial(iter->second);
-	return comb;
+	return combinations(vec.data(), vec.size());
 }
 
 static long long combinations(int vec[], int size) {
@@ -280,11 +221,7 @@ static long long combinations(int vec[], int size) {
 			counter[vec[i]]++;
 	}
 	
-	int sum = 0;
-	for (iter = counter.begin(); iter != counter.end(); iter++){
-		sum += iter->second;
-	}
-	long long comb = factorial(sum);
+	long long comb = factorial(size);
 	if (comb == -1){ // Too big to compute
 		return -1;
 	}
@@ -306,17 +243,7 @@ static long long factorial(long long x) {
 }
 
 static std::vector<long long> packVector(std::vector<int> vec){
-	unsigned int size = vec.size();
-	std::vector<long long> result (1 + size/8);
-	
-	for (unsigned int i = 0; i < size; i += 8) {
-		long long element = 0;
-		for (unsigned int j = 0; j < 8; j++)
-			if (i+j < size) element += ((long long)vec[i+j]) << (8*j);
-		result[i/8] = element;
-	}
-	
-	return result;
+	return packVector(vec.data(), vec.size());
 }
        
 static std::vector<long long> packVector(int vec[], int size){
@@ -347,5 +274,18 @@ static std::vector<int> unpackVector(std::vector<long long> vec){
 	
 	return result;
 }
+
+// find out if a permutation is even
+/*
+static bool isEven(int[] vec, int size) {
+	// silly O(n^2) alg
+	int transpositions = 0;
+	for (int i=0; i<size; i++) {
+		for (int j=i+1; j<size; j++) {
+			if (vec[i]>vec[j]) transpositions++;
+		}
+	}
+	return (transpositions%2==0);
+}*/
 
 #endif

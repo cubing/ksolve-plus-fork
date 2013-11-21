@@ -82,25 +82,32 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 		totalSize *= iter2->second;
 	}
 	
-	if (logSize >= 63*log(2)) {
-		std::cerr << "Puzzle is too big for a state to fit in a long long int\n";
-		exit(-1);
-	}
-	
 	bool using_blocks;
 	if (blocks.size() == 0)
 		using_blocks = false;
 	else
 		using_blocks = true;
 	
-	// initialize an array of sufficient size and set all to -1
-	bool usingMap = false;
-	signed char* distance = new (std::nothrow) signed char[(std::size_t) totalSize];
-	std::map<long long, signed char> distMap;
+	// try to initialize an array of sufficient size and set all to -1
+	int dataStructure = 0; // 0 = array, 1 = map<longlong,char>,
+	                        // 2 = map<vector<longlong>,char>
+	signed char* distance = NULL;
+	if (logSize < 31*log(2)) { // just don't bother trying to get >2^31 bytes
+		distance = new (std::nothrow) signed char[(std::size_t) totalSize];
+	}
+	std::map<long long, signed char> distMap1;
+	std::map<std::vector<long long>, signed char> distMap2;
 	long long i;
+	
 	if (distance == NULL) {
 		std::cout << "Could not allocate array of size " << totalSize << "\n";
-		usingMap = true;
+		if (logSize >= 63*log(2)) {
+			std::cout << "Puzzle cannot fit in a long long int.\n";
+			dataStructure = 2;
+		} else {
+			std::cout << "Puzzle can fit in a long long int.\n";
+			dataStructure = 1;
+		}
 	} else {
 		std::cout << "Allocated array of size " << totalSize << "\n";
 		for (i=0; i<totalSize; i++) {
@@ -121,16 +128,18 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 		temp2[iter3->first] = newSubstate(iter3->second.size);
 	}
 	MoveList::iterator moveIter;
-	if (usingMap) {
-		distMap[packPosition(solved, subSizes, datasets)] = 0;
-	} else {
+	if (dataStructure==0) {
 		distance[packPosition(solved, subSizes, datasets)] = 0;
+	} else if (dataStructure==1) {
+		distMap1[packPosition(solved, subSizes, datasets)] = 0;
+	} else if (dataStructure==2) {
+		distMap2[packPosition2(solved, subSizes, datasets)] = 0;
 	}
 	std::cout << "Moves\tPositions\n";
 	std::cout << depth << "\t" << cnt[depth] << "\n";
 	
 	// Loop through depths
-	if (!usingMap) {
+	if (dataStructure==0) {
 		while (1) {
 			// look for positions at this depth
 			for (i=0; i<totalSize; i++) {
@@ -167,14 +176,15 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 			if (cnt[depth] == 0) break;
 			std::cout << depth << "\t" << cnt[depth] << "\n";
 		}
-	} else {
+	} else if (dataStructure==1) {
 		while (1) {
 			// look for positions at this depth
 			std::map<long long, signed char>::iterator mapIter;
-			for (mapIter = distMap.begin(); mapIter != distMap.end(); mapIter++) {
+			for (mapIter = distMap1.begin(); mapIter != distMap1.end(); mapIter++) {
 				if (mapIter->second == depth) {
 					temp1 = unpackPosition(mapIter->first, subSizes, datasets, solved);
 					// try all possible moves and see if that position hasn't been visited
+					
 					for (moveIter = moves.begin(); moveIter != moves.end(); moveIter++){
 						if (using_blocks) // see if the blocks will prevent this move
 							if (!blockLegal(temp1, blocks, moveIter->second.state))
@@ -185,18 +195,60 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 						long long packTemp = packPosition(temp2, subSizes, datasets);
 						
 						if (metric == 0) { // HTM
-							if (distMap.find(packTemp) == distMap.end()) { // not visited yet
+							if (distMap1.find(packTemp) == distMap1.end()) { // not visited yet
 								cnt[depth+1]++;
-								distMap[packTemp] = depth+1;
+								distMap1[packTemp] = depth+1;
 							}
 						} else if (metric == 1) { // QTM
 							int newDepth = depth + moveIter->second.qtm;
-							if (distMap.find(packTemp) == distMap.end()) {
+							if (distMap1.find(packTemp) == distMap1.end()) {
 								cnt[newDepth]++;
-								distMap[packTemp] = newDepth;
-							} else if (distMap[packTemp] > newDepth) {
+								distMap1[packTemp] = newDepth;
+							} else if (distMap1[packTemp] > newDepth) {
 								cnt[newDepth]++;
-								distMap[packTemp] = newDepth;
+								distMap1[packTemp] = newDepth;
+							}
+						}
+					}
+				}
+			}
+			
+			// increment depth and print
+			depth++;
+			if (cnt[depth] == 0) break;
+			std::cout << depth << "\t" << cnt[depth] << "\n";
+		}
+	} else if (dataStructure==2) {
+		while (1) {
+			// look for positions at this depth
+			std::map<std::vector<long long>, signed char>::iterator mapIter;
+			for (mapIter = distMap2.begin(); mapIter != distMap2.end(); mapIter++) {
+				if (mapIter->second == depth) {
+					temp1 = unpackPosition2(mapIter->first, subSizes, datasets, solved);
+					// try all possible moves and see if that position hasn't been visited
+					for (moveIter = moves.begin(); moveIter != moves.end(); moveIter++){
+						if (using_blocks) // see if the blocks will prevent this move
+							if (!blockLegal(temp1, blocks, moveIter->second.state))
+								continue;
+					
+						// apply move and pack new position
+						applyMove(temp1, temp2, moveIter->second.state, datasets);
+						std::vector<long long> packTemp = packPosition2(temp2, subSizes, datasets);
+						
+						if (metric == 0) { // HTM
+							if (distMap2.find(packTemp) == distMap2.end()) { // not visited yet
+								cnt[depth+1]++;
+								distMap2[packTemp] = depth+1;
+							}
+						} else if (metric == 1) { // QTM
+							int newDepth = depth + moveIter->second.qtm;
+							if (distMap2.find(packTemp) == distMap2.end()) {
+								cnt[newDepth]++;
+								distMap2[packTemp] = newDepth;
+							} else if (distMap2[packTemp] > newDepth) {
+								cnt[distMap2[packTemp]]--;
+								cnt[newDepth]++;
+								distMap2[packTemp] = newDepth;
 							}
 						}
 					}
@@ -222,34 +274,156 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 	if (cnt[depth-1] < 5) antipodes = cnt[depth-1];
 	std::cout << "\nPrinting " << antipodes << " antipodes:\n\n";
 	int antiCnt = 0;
-	if (usingMap) {
-		std::map<long long, signed char>::iterator mapIter;
-		for (mapIter = distMap.begin(); mapIter != distMap.end(); mapIter++) {
-			if (mapIter->second == depth - 1) {
-				temp1 = unpackPosition(mapIter->first, subSizes, datasets, solved);
-				printPosition(temp1);
-				std::cout << "\n";
-				antiCnt++;
-				if (antiCnt >= antipodes) break;
-			}
-		}
-	} else {
+	if (dataStructure==0) {
 		for (i=0; i<totalSize; i++) {
 			if (distance[i] == depth - 1) {
+				// found an antipode!
 				temp1 = unpackPosition(i, subSizes, datasets, solved);
+				Position curPos = temp1;
+				Position nextPos;
+				Position::iterator iter3;
+				
+				// find a solution
+				std::cout << "Antipode solved by";
+				int curDepth = depth - 1;
+				
+				while (curDepth > 0) {
+					// try all moves to see which leads to the lowest depth
+					int minDepth = curDepth;
+					int minIndex = -1;
+					for (iter3 = solved.begin(); iter3 != solved.end(); iter3++){
+						nextPos[iter3->first] = newSubstate(iter3->second.size);
+					}
+					for (moveIter = moves.begin(); moveIter != moves.end(); moveIter++){
+						if (using_blocks) // see if the blocks will prevent this move
+							if (!blockLegal(curPos, blocks, moveIter->second.state))
+								continue;
+						
+						applyMove(curPos, nextPos, moveIter->second.state, datasets);
+						int nextDepth = distance[packPosition(nextPos, subSizes, datasets)];
+						if (nextDepth < minDepth) {
+							minDepth = nextDepth;
+							minIndex = moveIter->first;
+						}
+					}
+					
+					// apply best move
+					applyMove(curPos, nextPos, moves[minIndex].state, datasets);
+					curPos = nextPos;
+					curDepth = minDepth;
+					std::cout << " " << moves[minIndex].name;
+				}
+				
+				std::cout << ":\n";
 				printPosition(temp1);
 				std::cout << "\n";
 				antiCnt++;
 				if (antiCnt >= antipodes) break;
 			}
 		}
+		delete []distance;
+	} else if (dataStructure==1) {
+		std::map<long long, signed char>::iterator mapIter;
+		for (mapIter = distMap1.begin(); mapIter != distMap1.end(); mapIter++) {
+			if (mapIter->second == depth - 1) {
+				// found an antipode!
+				temp1 = unpackPosition(mapIter->first, subSizes, datasets, solved);
+				Position curPos = temp1;
+				Position nextPos;
+				Position::iterator iter3;
+				
+				// find a solution
+				std::cout << "Antipode solved by";
+				int curDepth = depth - 1;
+				
+				while (curDepth > 0) {
+					// try all moves to see which leads to the lowest depth
+					int minDepth = curDepth;
+					int minIndex = -1;
+					for (iter3 = solved.begin(); iter3 != solved.end(); iter3++){
+						nextPos[iter3->first] = newSubstate(iter3->second.size);
+					}
+					for (moveIter = moves.begin(); moveIter != moves.end(); moveIter++){
+						if (using_blocks) // see if the blocks will prevent this move
+							if (!blockLegal(curPos, blocks, moveIter->second.state))
+								continue;
+						
+						applyMove(curPos, nextPos, moveIter->second.state, datasets);
+						int nextDepth = distMap1[packPosition(nextPos, subSizes, datasets)];
+						if (nextDepth < minDepth) {
+							minDepth = nextDepth;
+							minIndex = moveIter->first;
+						}
+					}
+					
+					// apply best move
+					applyMove(curPos, nextPos, moves[minIndex].state, datasets);
+					curPos = nextPos;
+					curDepth = minDepth;
+					std::cout << " " << moves[minIndex].name;
+				}
+				
+				std::cout << ":\n";
+				printPosition(temp1);
+				std::cout << "\n";
+				antiCnt++;
+				if (antiCnt >= antipodes) break;
+			}
+		}
+		
+		distMap1.clear();
+	} else if (dataStructure==2) {
+		std::map<std::vector<long long>, signed char>::iterator mapIter;
+		for (mapIter = distMap2.begin(); mapIter != distMap2.end(); mapIter++) {
+			if (mapIter->second == depth - 1) {
+				// found an antipode!
+				temp1 = unpackPosition2(mapIter->first, subSizes, datasets, solved);
+				Position curPos = temp1;
+				Position nextPos;
+				Position::iterator iter3;
+				
+				// find a solution
+				std::cout << "Antipode solved by";
+				int curDepth = depth - 1;
+				
+				while (curDepth > 0) {
+					// try all moves to see which leads to the lowest depth
+					int minDepth = curDepth;
+					int minIndex = -1;
+					for (iter3 = solved.begin(); iter3 != solved.end(); iter3++){
+						nextPos[iter3->first] = newSubstate(iter3->second.size);
+					}
+					for (moveIter = moves.begin(); moveIter != moves.end(); moveIter++){
+						if (using_blocks) // see if the blocks will prevent this move
+							if (!blockLegal(curPos, blocks, moveIter->second.state))
+								continue;
+						
+						applyMove(curPos, nextPos, moveIter->second.state, datasets);
+						int nextDepth = distMap2[packPosition2(nextPos, subSizes, datasets)];
+						if (nextDepth < minDepth) {
+							minDepth = nextDepth;
+							minIndex = moveIter->first;
+						}
+					}
+					
+					// apply best move
+					applyMove(curPos, nextPos, moves[minIndex].state, datasets);
+					curPos = nextPos;
+					curDepth = minDepth;
+					std::cout << " " << moves[minIndex].name;
+				}
+				
+				std::cout << ":\n";
+				printPosition(temp1);
+				std::cout << "\n";
+				antiCnt++;
+				if (antiCnt >= antipodes) break;
+			}
+		}
+		
+		distMap2.clear();
 	}
 	
-	if (usingMap) {
-		distMap.clear();
-	} else {
-		delete []distance;
-	}
 	delete []cnt;
 	return true;
 }
@@ -275,6 +449,31 @@ static long long packPosition(Position& position, std::map<std::pair<string, int
 			std::cerr << "Something wrong with these subSizes!\n";
 			exit(-1);
 		}	
+	}
+	
+	return packed;
+}
+
+// "Pack" a full-puzzle position - convert it from a position into a *vector*
+static std::vector<long long> packPosition2(Position& position, std::map<std::pair<string, int>, long long> subSizes, PieceTypes& datasets) {
+	std::vector<long long> packed (subSizes.size());
+	int i = 0;
+	std::map<std::pair<string, int>, long long>::iterator iter;
+	for (iter = subSizes.begin(); iter != subSizes.end(); iter++) {
+		// then, add a number corresponding to that subSize's part
+		if (iter->first.second == 0) {
+			packed[i] = oparVector2Index(position[iter->first.first].orientation, position[iter->first.first].size, datasets[iter->first.first].omod);
+		} else if (iter->first.second == 1) {
+			packed[i] = oVector2Index(position[iter->first.first].orientation, position[iter->first.first].size, datasets[iter->first.first].omod);
+		} else if (iter->first.second == 2) {
+			packed[i] = pVector2Index(position[iter->first.first].permutation, position[iter->first.first].size);
+		} else if (iter->first.second == 3) {
+			packed[i] = pVector3Index(position[iter->first.first].permutation, position[iter->first.first].size);
+		} else {
+			std::cerr << "Something wrong with these subSizes!\n";
+			exit(-1);
+		}
+		i++;
 	}
 	
 	return packed;
@@ -312,6 +511,45 @@ static Position unpackPosition(long long position, std::map<std::pair<string, in
 			exit(-1);
 		}	
 	}
+	
+	return unpacked;
+}
+
+// "Unpack" a full-puzzle position - convert it from a number into a *vector*
+static Position unpackPosition2(std::vector<long long> position, std::map<std::pair<string, int>, long long> subSizes, PieceTypes& datasets, Position& solved) {
+	// construct a new Position with blank versions of everything
+	Position unpacked;
+	PieceTypes::iterator iter2;
+	for (iter2 = datasets.begin(); iter2 != datasets.end(); iter2++) {
+		substate blankState;
+		blankState.size = iter2->second.size;
+		unpacked.insert(std::pair<string, substate> (iter2->first, blankState));
+	}
+	
+	std::map<std::pair<string, int>, long long>::reverse_iterator iter;
+	int i = position.size() - 1;
+	for (iter = subSizes.rbegin(); iter != subSizes.rend(); iter++) {
+		// get the current index
+		long long curIndex = position[i];
+		i--;
+		
+		// now convert it into a permutation or orientation
+		int size = unpacked[iter->first.first].size;
+		if (iter->first.second == 0) {
+			unpacked[iter->first.first].orientation = oparIndex2Array(curIndex, size, datasets[iter->first.first].omod);
+		} else if (iter->first.second == 1) {
+			unpacked[iter->first.first].orientation = oIndex2Array(curIndex, size, datasets[iter->first.first].omod);
+		} else if (iter->first.second == 2) {
+			unpacked[iter->first.first].permutation = pIndex2Array(curIndex, size);
+		} else if (iter->first.second == 3) {
+			unpacked[iter->first.first].permutation = pIndex3Array(curIndex, solved[iter->first.first].permutation, solved[iter->first.first].size);
+		} else {
+			std::cerr << "Something wrong with these subSizes!\n";
+			exit(-1);
+		}	
+	}
+	
+	position.clear();
 	
 	return unpacked;
 }

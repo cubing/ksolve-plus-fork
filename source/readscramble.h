@@ -201,17 +201,18 @@ public:
 					}
 					
 					// apply move called movename to solved, if possible
-					if (moves.find(movename) == moves.end()) {
+					if (!moveIn(movename, moves)) {
 						std::cerr << "Move " << movename << " in scramble " << name << " is unknown.\n";
 						exit(-1);
 					}
+					
 					if (blocks.size() != 0) {
-						if (!blockLegal(state, blocks, moves[movename].state)) {
+						if (!blockLegal(state, blocks, moves[getMoveID(movename, moves)].state)) {
 							std::cerr << "Move " << movename << " in scramble " << name << " is blocked.\n";
 							exit(-1);
 						}
 					}
-					applyMove(state, new_state, moves[movename].state, datasets);
+					applyMove(state, new_state, moves[getMoveID(movename, moves)].state, datasets);
 					
 					// copy new_state to state
 					for (iter = datasets.begin(); iter != datasets.end(); iter++) {
@@ -364,7 +365,7 @@ public:
 					if (ml.moveGroup)
 						movename = movename.substr(0, movename.size()-1);
 					
-					if (moves.find(movename) == moves.end()) {
+					if (!moveIn(movename, moves)) {
 						std::cerr << "Move " << movename << " used in move list is not previously declared.\n";
 						exit(-1);
 					}
@@ -373,7 +374,7 @@ public:
 						std::cerr << "Error reading move limits.\n";
 						exit(-1);
 					}
-					ml.name = movename;
+					ml.move = getMoveID(movename, moves);
 					ml.limit = limit;
 					
 					// calculate block
@@ -409,7 +410,11 @@ public:
 					fin >> movename;
 				}
 			}
-			else if (command == ""){}  // To avoid trouble with extra rows on the end.
+			else if (command.at(0) == '#'){ // Comment
+					char buff[500];
+					fin.getline(buff,500);
+			}
+			else if (command == "") {} // Empty line
 			else {
 				std::cerr << "Unknown command \"" << command << "\" in scramble file.\n";  
 				exit(-1);

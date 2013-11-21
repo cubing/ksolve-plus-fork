@@ -73,7 +73,7 @@ struct ksolve {
 		int i = 0;
 		MoveList::iterator moveIter;
 		for (moveIter = moves.begin(); moveIter != moves.end(); moveIter++) {
-			if (moveIter->second.name != moveIter->second.parentMove) {
+			if (moveIter->first != moveIter->second.parentID) {
 				if (i>0) std::cout << ", ";
 				i++;
 				std::cout << moveIter->second.name;
@@ -115,7 +115,6 @@ struct ksolve {
 			int depth = 0;
 			string temp_a, temp_b;
 			temp_a = " ";
-			temp_b = ".";
 
 			std::cout << "\nSolving \"" << scramble.name << "\"\n";
 			
@@ -155,7 +154,7 @@ struct ksolve {
 			// The tree-search for the solution(s)
 			int usedSlack = 0;
 			while(1) {
-				boolean foundSolution = treeSolve(scramble.state, solved, moves, datasets, tables, forbidden, scramble.ignore, blocks, depth, scramble.metric, scramble.moveLimits, temp_a, temp_b);
+				boolean foundSolution = treeSolve(scramble.state, solved, moves, datasets, tables, forbidden, scramble.ignore, blocks, depth, scramble.metric, scramble.moveLimits, temp_a, -1);
 				if (foundSolution || usedSlack > 0) {
 					usedSlack++;
 					if (usedSlack > scramble.slack) break;

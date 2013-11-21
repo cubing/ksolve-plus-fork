@@ -142,7 +142,23 @@ static substate newSubstate(int size) {
 
 // does this limit apply to this move?
 static bool limitMatches(MoveLimit& limit, fullmove& move) {
-	return limit.name == (limit.moveGroup ? move.parentMove : move.name);
+	return limit.move == (limit.moveGroup ? move.parentID : move.id);
+}
+
+static int getMoveID(string name, MoveList& moves) {
+	MoveList::iterator iter;
+	for (iter = moves.begin(); iter != moves.end(); iter++) {
+		if (iter->second.name == name) return iter->first;
+	}
+	return -1;
+}
+
+static bool moveIn(string name, MoveList& moves) {
+	MoveList::iterator iter;
+	for (iter = moves.begin(); iter != moves.end(); iter++) {
+		if (iter->second.name == name) return true;
+	}
+	return false;
 }
 
 static void processMoveLimits(MoveList& moves, std::vector<MoveLimit> limits) {

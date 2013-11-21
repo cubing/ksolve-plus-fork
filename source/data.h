@@ -70,21 +70,22 @@ struct subprune{
 typedef std::string string;
 typedef std::map<string, substate> Position;
 typedef std::map<string, std::set<int> > Block;
-typedef std::pair<string, string> MovePair;
+typedef std::pair<int, int> MovePair;
 typedef std::map<string, subprune> PruneTable;
 typedef std::map<string, dataset> PieceTypes;
 
 // all the information needed to describe a possible move
 struct fullmove {
 	string name;
-	string parentMove;
+	int id;
+	int parentID;
 	int qtm;
 	Position state;
 };
 
 // info about a particular move limit
 struct MoveLimit {
-	string name; // name of move (or parent move) to limit
+	int move; // ID of move (or parent move) to limit
 	int limit; // maximum number of moves of this type
 	bool moveGroup; // is this a group of moves, or just one?
 	Block owned; // pieces that can only be affected by these moves
@@ -101,6 +102,6 @@ struct ScrambleDef {
 	std::vector<MoveLimit> moveLimits;
 };
 
-typedef std::map<string, fullmove> MoveList;
+typedef std::map<int, fullmove> MoveList;
 
 #endif

@@ -1,4 +1,4 @@
-                      ksolve+ v1.0
+                      ksolve+ v1.3
                      (c)  2007-2013
             by Kare Krig and Michael Gottlieb
 
@@ -24,6 +24,7 @@
   * MaxDepth
   * Slack
   * QTM and HTM
+  * Using Comments
 * God's Algorithm
 * Details and Tricks
   * Pruning Tables
@@ -60,7 +61,7 @@ The Name command just says the name of the puzzle you are describing. This is no
 
 Set [set_name] [number_of_pieces] [number_of_orientations]
 
-The Set command defines one type of piece in your puzzle; there can be as many types as you want. Pieces in a set should be able to move into each others' position. After the name of the set, you will include the number of pieces of that type in your puzzle, and the number of orientations each piece has.
+The Set command defines one type of piece in your puzzle; there can be as many types as you want. Pieces in a set should be able to move into each others' position. After the name of the set, you will include the number of pieces of that type in your puzzle, and the number of orientations each piece has. You must define all the Sets at the start of the definition file, before the solved state, moves, or Ignore command.
 
 -- Solved --
 
@@ -71,7 +72,7 @@ Solved
 ...
 End
 
-The Solved command defines the solved state of your puzzle. Of course, you will usually want the puzzle to end up with every piece in its original position and unoriented, but you have the option of solving to a different state. You need to define a permutation for each set in your puzzle. The orientation vector is not required; if you leave it out, ksolve+ will set all of the missing orientations to 0.
+The Solved command defines the solved state of your puzzle. Of course, you will usually want the puzzle to end up with every piece in its original position and unoriented, but you have the option of solving to a different state. For each piece type you include, you must give the permutation, but you can leave orientation out (in which case it will be set to all 0s). If you leave out an entire piece type, ksolve+ will give you a permutation of 1 2 ... N and an orientation of all 0s.
 
 Permutation vectors and orientation vectors simply describe where every piece in a group is and how they are oriented. A permutation vector is a list of the numbers from 1 to n in some order, such as 2 3 1 4 5 6. This describes where each piece goes - for instance, the 2 in the first spot means that piece number 1 is in spot 2. An orientation vector is a list of n numbers from 0 up to the maximum orientation, such as 0 0 0 1 1 0. A piece marked with a 0 is unoriented, and a piece with an orientation of 1, 2, etc. is oriented by that much. For example, 3x3x3 edges have two orientations each, so with that type of piece your orientation vector will only have 0s and 1s.
 
@@ -84,7 +85,7 @@ Move [move_name]
 ...
 End
 
-The Move command defines one of the possible moves and how it affects the pieces in your puzzle. Again, you need to define a permutation for each set in your puzzle, and you can either give the orientation or (to have it set to all 0s) leave it out.
+The Move command defines one of the possible moves and how it affects the pieces in your puzzle. Again, for each piece type you include, you must give the permutation, but you can leave orientation out (in which case it will be set to all 0s). If you leave out an entire piece type, ksolve+ will give you a permutation of 1 2 ... N and an orientation of all 0s.
 
 ksolve+ will not just understand this move, but also all powers of it. For example, if your puzzle is a 3x3x3 and you define a move of the right face which you call R, ksolve+ will also create moves called R2 and R' automatically. You do not need to define those moves separately.
 
@@ -216,6 +217,12 @@ For instance, a move limit of "F2 1" means that there can be at most one F2 move
 
 Like with Slack, QTM, etc. this command will apply to all scrambles until the next MoveLimits command or until the end of the file. If you want to clear all the limits just include a command with no lines between MoveLimits and End.
 
+-- Using Comments --
+
+# [string]
+
+To make a comment, simply type a # at the beginning of the line. ksolve+ will ignore the rest of the line no matter what you write there. These are useful for writing yourself notes about the scrambles or keeping track of which numbers correspond to which pieces.
+
 ###### God's Algorithm ######
 
 ksolve+ can also compute God's Algorithm tables. That is, for each N, it will compute the number of positions that can be solved in N moves but no fewer. You only need a .def file for this. To compute a God's Algorithm table in HTM (Half Turn Metric), use this command:
@@ -223,9 +230,9 @@ ksolve+ can also compute God's Algorithm tables. That is, for each N, it will co
 To compute a God's Algorithm table in QTM (Quarter Turn Metric), use this command:
 	ksolve puzzle.def !q
 
-After finishing the computation of a God's Algorithm table, ksolve+ will print out up to 5 antipodes. These are puzzle positions that require the maximum number of moves to solve. 
+After finishing the computation of a God's Algorithm table, ksolve+ will print out up to 5 antipodes, with an optimal move sequence for each one. These are puzzle positions that require the maximum possible number of moves to solve. 
 
-Currently there is a limitation on the complexity of the puzzle. If the puzzle has more than about 9 * 10^18 possible states (counting all permutation and orientation cases whether or not they can be achieved by the puzzle), ksolve+ will not try to compute these tables. In the future I may remove this restriction, but there will be a speed and memory tradeoff since it is generally more difficult to store and manipulate numbers larger than 64 bits.
+ksolve+ uses a few slightly different techniques to store the information here, depending on the complexity of the puzzle (the number of possible states, including positions prevented by Blocks or parity constraints). A larger puzzle may be slower, and also take a bit more memory, per position.
 
 ###### Details and Tricks ######
 
@@ -268,6 +275,12 @@ It is possible to define all of the centers together as one piece group in this 
 ###### Version History ######
 
 (ksolve+)
+1.3  Optimized indexing code for non-unique permutations
+     Changed data structure for moves, speeds everything up
+     God's Alg tables can be generated for puzzles with > 2^63 positions, although it's slower
+     God's Alg command prints algs for antipode positions
+     Comments no longer require a space after the #, and they work in scramble files too
+     In .def file, can omit parts of a move/solved state
 1.2  More gcc optimization = code runs way faster. Who knew?
      Other optimizations to speed up puzzles with Blocks or permutation-only piece types
      Various code improvements

@@ -22,7 +22,7 @@
 #ifndef SEARCH_H
 #define SEARCH_H
 
-static bool treeSolve(Position state, Position& solved, MoveList& moves, PieceTypes& datasets, PruneTable& prunetables, std::set<MovePair>& forbiddenPairs, Position& ignore, std::vector<Block>& blocks, int depth, int metric, std::vector<MoveLimit>& moveLimits, string sequence, string old_move){
+static bool treeSolve(Position state, Position& solved, MoveList& moves, PieceTypes& datasets, PruneTable& prunetables, std::set<MovePair>& forbiddenPairs, Position& ignore, std::vector<Block>& blocks, int depth, int metric, std::vector<MoveLimit>& moveLimits, string sequence, int old_move){
 	// if we ran out of depth, it's either solved or not
 	if (depth <= 0) {
 		if (isSolved(state, solved, ignore, datasets)){
@@ -100,7 +100,7 @@ static bool treeSolve(Position state, Position& solved, MoveList& moves, PieceTy
 		}
 		
 		// recurse!
-		if (treeSolve(new_state, solved, moves, datasets, prunetables, forbiddenPairs, ignore, blocks, newDepth, metric, moveLimits, sequence + " " + iter->first, iter->first))
+		if (treeSolve(new_state, solved, moves, datasets, prunetables, forbiddenPairs, ignore, blocks, newDepth, metric, moveLimits, sequence + " " + iter->second.name, iter->first))
 			success = true;
 		
 		// clean up modified move limits

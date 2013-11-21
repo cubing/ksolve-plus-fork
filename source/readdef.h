@@ -25,6 +25,7 @@
 class Rules {
 public:
 	Rules(string filename){
+		moveid = 0;
 		std::ifstream fin(filename.c_str());
 		if (!fin.good()){
 			std::cout << "Can't open puzzle definition!\n";
@@ -44,7 +45,11 @@ public:
 					if (datasets.find(setname) != datasets.end()) {
 						std::cerr << "Set " << setname << " declared more than once.\n";
 						exit(-1);
-					}                
+					}
+					if (moves.size() > 0 || solved.size() > 0 || ignore.size() > 0) {
+						std::cerr << "You must define all sets first!\n";
+						exit(-1);
+					}
 					fin >> datasets[setname].size;
 					if (fin.fail() || datasets[setname].size < 1){
 						std::cerr << "Set " << setname << " does not have positive size.\n";
@@ -62,21 +67,22 @@ public:
 				else if (command == "Move"){
 					string movename, setname;
 					fin >> movename;
-					if (moves.find(movename) != moves.end()) {
+					if (moveIn(movename, moves)) {
 						std::cerr << "Move " << movename << " declared more than once.\n";
 						exit(-1);
 					}
 					
 					fullmove newMove;
 					newMove.name = movename;
-					newMove.parentMove = movename;
+					newMove.id = moveid;
+					newMove.parentID = moveid;
 					newMove.qtm = 1;
 					newMove.state = readPosition(fin, true, false, "move "+movename);
-					
-					parentMoves.push_back(movename);
-					addPowers(newMove, datasets);
+					parentMoves.push_back(moveid);
+					moves[moveid] = newMove;
+					moveid++;
+					addPowers(newMove, moveid-1, datasets);
 					adjustOParity(datasets, newMove.state);
-					moves[movename] = newMove;
 				}
 				else if (command == "Solved"){
 					solved = readPosition(fin, false, true, "solved state");
@@ -89,7 +95,7 @@ public:
 							std::cerr << "Error reading forbidden pairs.\n";
 							exit(-1);
 						}
-						if (moves.find(movename1) == moves.end()){
+						if (moveIn(movename1, moves)){
 							std::cerr << "Move " << movename1 << " used in forbidden pairs is not previously declared.\n";
 							exit(-1);
 						}
@@ -99,12 +105,13 @@ public:
 							std::cerr << "Error reading forbidden pairs.\n";
 							exit(-1);
 						}
-						if (moves.find(movename2) == moves.end()){
+						if (moveIn(movename2, moves)){
 							std::cerr << "Move " << movename2 << " used in forbidden pairs is not previously declared.\n";
 							exit(-1);
 						}
 						
-						forbidden.insert(MovePair(movename1, movename2));
+						forbidden.insert(MovePair(getMoveID(movename1, moves), 
+												getMoveID(movename2, moves)));
 						fin >> movename1;
 					}
 				}
@@ -118,27 +125,27 @@ public:
 				}
 				else if (command == "ForbiddenGroups"){
 					string line, move1;
-					std::vector<string> group;
+					std::vector<int> group;
 					getline(fin, line);
 					getline(fin, line);
 					std::istringstream input(line);
 					input >> move1;
 					while(move1 != "End"){
-						if (moves.find(move1) == moves.end()){
+						if (!moveIn(move1, moves)){
 							std::cerr << "Move " << move1 << " used in ForbiddeGroups is not previously declared.\n";
 							exit(-1);
 						}
 							 
 						group.clear();
-						group.push_back(move1);
+						group.push_back(getMoveID(move1, moves));
 						while(!input.eof()){
 							input >> move1;
 							if (!input.fail()){
-								if (moves.find(move1) == moves.end()){
+								if (!moveIn(move1, moves)){
 									std::cerr << "Move " << move1 << " used in ForbiddenGroups is not previously declared.\n";
 									exit(-1);
 								}
-								group.push_back(move1);
+								group.push_back(getMoveID(move1, moves));
 							}
 						}
 						
@@ -202,7 +209,7 @@ public:
 						fin >> newmove;
 					}
 				}
-				else if (command == "#"){ // Comment
+				else if (command.at(0) == '#'){ // Comment
 					char buff[500];
 					fin.getline(buff,500);
 				}
@@ -283,20 +290,20 @@ public:
 	
 private:
 	string name; // The name of the puzzle
+	int moveid; // move ID (serial)
 	PieceTypes datasets; // Size and properties of the state-data
 	Position solved;
 	Position ignore; // 0 = solve piece, 1 = don't solve piece
 	MoveList moves; // Possible moves of the puzzle
-	std::vector<string> parentMoves; // Names of parent moves
+	std::vector<int> parentMoves; // IDs of parent moves
 	std::set<MovePair> forbidden;
 	std::vector<Block> blocks;
-	std::map<string, std::vector<string> > moveGroups;
 	std::map<string, int> moveLimits; // limits on # of moves
 	
-	// Add all powers of this move, and keep track of them in moveGroups
-	void addPowers(fullmove move, PieceTypes& datasets) {
-		std::vector<string> moveGroup;
-		moveGroup.push_back(move.name);
+	// Add all powers of this move
+	void addPowers(fullmove move, int parentid, PieceTypes& datasets) {
+		std::vector<int> moveGroup;
+		moveGroup.push_back(parentid);
 		
 		// Find order of move
 		Position fixedState; // fix state to remove weird orientations
@@ -340,13 +347,15 @@ private:
 			string newName = ss.str();
 			
 			// add updated move to moveGroup and list of moves
-			moveGroup.push_back(newName);
+			moveGroup.push_back(moveid);
 			fullmove newMove;
 			newMove.name = newName;
-			newMove.parentMove = move.name;
+			newMove.parentID = parentid;
+			newMove.id = moveid;
 			newMove.qtm = qtm;
 			newMove.state.insert(move2.state.begin(), move2.state.end());
-			moves[newName] = newMove;
+			moves[moveid] = newMove;
+			moveid++;
 		}
 		
 		// Forbid all pairs
@@ -355,8 +364,6 @@ private:
 				forbidden.insert(MovePair(moveGroup[i], moveGroup[j]));
 			}
 		}
-
-		moveGroups[move.name] = moveGroup;
 	}
 	
 	// determine which moves are parallel, and process them
@@ -378,12 +385,12 @@ private:
 					
 					// if so, forbid any move with parent i followed by any move with parent j
 					for (iter1 = moves.begin(); iter1 != moves.end(); iter1++) {
-						if (0 == iter1->second.parentMove.compare(parentMoves[i])) {
+						if (iter1->second.parentID == parentMoves[i]) {
 							for (iter2 = moves.begin(); iter2 != moves.end(); iter2++) {
-								if (0 == iter2->second.parentMove.compare(parentMoves[j])) {
+								if (iter2->second.parentID == parentMoves[j]) {
 									// if we have not already forbidden the [j,i] move pair, forbid the [i,j] one
-									if (forbidden.find(MovePair(iter2->second.name, iter1->second.name)) == forbidden.end()) {
-										forbidden.insert(MovePair(iter1->second.name, iter2->second.name));
+									if (forbidden.find(MovePair(iter2->first, iter1->first)) == forbidden.end()) {
+										forbidden.insert(MovePair(iter1->first, iter2->first));
 									}
 								}
 							}
@@ -467,6 +474,35 @@ private:
 			// get next setname
 			fin >> setname;
 		}
+		
+		// add "solved" permutations for all undeclared positions!
+		PieceTypes::iterator pieceIter;
+		for (pieceIter = datasets.begin(); pieceIter != datasets.end(); pieceIter++) {
+			string setname = pieceIter->first;
+			if (newPosition.find(setname) == newPosition.end()) { // piece not included
+				newPosition[setname] = newSubstate(datasets[setname].size);
+				if (newPosition[setname].permutation == NULL || newPosition[setname].orientation == NULL){
+					std::cerr << "Could not allocate memory in " << title << ".\n";
+					exit(-1);
+				}
+				for (i = 0; i < datasets[setname].size; i++){
+					newPosition[setname].orientation[i] = 0;
+				}
+				if (title == "Ignore command") { // ignore-type, permutation should be all 0's
+					for (i = 0; i < datasets[setname].size; i++){
+						newPosition[setname].permutation[i] = 0;
+					}
+				} else { // permutation-type, permutation should be 1 2 3 ...
+					for (i = 0; i < datasets[setname].size; i++){
+						newPosition[setname].permutation[i] = i+1;
+					}
+					if (setUnique) {
+						datasets[setname].uniqueperm = true;
+					}
+				}
+			}
+		}
+		
 		return newPosition;
 	}
 };

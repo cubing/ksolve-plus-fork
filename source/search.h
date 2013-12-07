@@ -22,101 +22,187 @@
 #ifndef SEARCH_H
 #define SEARCH_H
 
-static bool treeSolve(Position state, Position& solved, MoveList& moves, PieceTypes& datasets, PruneTable& prunetables, std::set<MovePair>& forbiddenPairs, Position& ignore, std::vector<Block>& blocks, int depth, int metric, std::vector<MoveLimit>& moveLimits, string sequence, int old_move){
+static bool treeSolve(Position state, Position& solved, MoveList& moves, PieceTypes& datasets, PruneTable& prunetables, std::set<MovePair>& forbiddenPairs, Position& ignore, std::vector<Block>& blocks, int depth, int metric, std::vector<MoveLimit>& moveLimits, string sequence, int old_move, bool splitThreads){
 	// if we ran out of depth, it's either solved or not
 	if (depth <= 0) {
 		if (isSolved(state, solved, ignore, datasets)){
-			std::cout << sequence << "\n";
+            #pragma omp critical
+            {
+                std::cout << sequence << "\n";
+            }
 			return true;
 		} else {
 			return false;
 		}
 	}
-	
+
 	// use pruning tables to see if we don't have enough depth left
 	if (prune(state, depth, datasets, prunetables))
 		return false;
- 
+
 	// define variables; initialize room for a new state
-	Position::iterator iter2;
 	bool success = false;
-	Position new_state;
-	for (iter2 = state.begin(); iter2 != state.end(); iter2++){
-		new_state[iter2->first] = newSubstate(iter2->second.size);
-	}
 	bool using_blocks = (blocks.size() != 0);
 	bool using_limits = (moveLimits.size() != 0);
 
-	MoveList::iterator iter;
-	for (iter = moves.begin(); iter != moves.end(); iter++){
-		// if we have a forbidden pair, try the next move
-		if (forbiddenPairs.find(MovePair(old_move, iter->first)) != forbiddenPairs.end())
-			continue;
-		// if this move breaks the blocks, try the next move
-		if (using_blocks)
-			if (!blockLegal(state, blocks, iter->second.state))
-				continue;
-		// if movelimits make this move impossible, try the next move
-		if (using_limits) {
-			bool forbidden = false;
-			for (unsigned int i=0; i<moveLimits.size(); i++) {
-				if (moveLimits[i].limit <= 0 && limitMatches(moveLimits[i], iter->second)) {
-					forbidden = true;
-					break;
-				}
-			}
-			if (forbidden) continue;
-		}
-		
-		// compute depth of new position using HTM or QTM
-		int newDepth;
-		if (metric == 0) { // HTM
-			newDepth = depth - 1;
-		} else { // QTM
-			newDepth = depth - iter->second.qtm;
-		}
-		if (newDepth < 0) continue; // not enough depth for this move? try the next one
-		
-		// compute new position
-		applyMove(state, new_state, iter->second.state, datasets);
-		
-		// decrement applicable move limits, and check if we got into an unsolvable state
-		if (using_limits) {
-			bool isSolvable = true; // see if we have stumbled into a situation that requires more of the limited moves
-			for (unsigned int i=0; i<moveLimits.size(); i++) {
-				if (limitMatches(moveLimits[i], iter->second)) {
-					moveLimits[i].limit--;
-					if (moveLimits[i].limit == 0) {
-						isSolvable = isSolvable && stillSolvable(new_state, solved, ignore, moveLimits[i].owned);
-					}
-				}
-			}
-			if (!isSolvable) {
-				for (unsigned int i=0; i<moveLimits.size(); i++)
-					if (limitMatches(moveLimits[i], iter->second))
-						moveLimits[i].limit++;
-				continue;
-			}
-		}
-		
-		// recurse!
-		if (treeSolve(new_state, solved, moves, datasets, prunetables, forbiddenPairs, ignore, blocks, newDepth, metric, moveLimits, sequence + " " + iter->second.name, iter->first))
-			success = true;
-		
-		// clean up modified move limits
-		if (using_limits)
-			for (unsigned int i=0; i<moveLimits.size(); i++)
-				if (limitMatches(moveLimits[i], iter->second))
-					moveLimits[i].limit++;
-	}
+    if(splitThreads) {
+        #pragma omp parallel //num_threads(1)
+        {
+        //for (iter = moves.begin(); iter != moves.end(); iter++){
+            Position new_state;
+            Position::iterator iter2;
+            for (iter2 = state.begin(); iter2 != state.end(); iter2++){
+                new_state[iter2->first] = newSubstate(iter2->second.size);
+            }
 
-	// free new_state memory
-	for (iter2 = state.begin(); iter2 != state.end(); iter2++){
-		delete new_state[iter2->first].permutation;
-		delete new_state[iter2->first].orientation;
-	}
+            std::vector<MoveLimit> localMoveLimits = moveLimits;
 
-	return success;    
+            #pragma omp for
+            for (int i = 0; i < moves.size(); i++){
+                MoveList::iterator iter = moves.begin();
+                for(int j = 0; j < i; j++)
+                    iter++;
+                // if we have a forbidden pair, try the next move
+                if (forbiddenPairs.find(MovePair(old_move, iter->first)) != forbiddenPairs.end())
+                    continue;
+                // if this move breaks the blocks, try the next move
+                if (using_blocks)
+                    if (!blockLegal(state, blocks, iter->second.state))
+                        continue;
+                // if movelimits make this move impossible, try the next move
+                if (using_limits) {
+                    bool forbidden = false;
+                    for (unsigned int i=0; i<localMoveLimits.size(); i++) {
+                        if (localMoveLimits[i].limit <= 0 && limitMatches(localMoveLimits[i], iter->second)) {
+                            forbidden = true;
+                            break;
+                        }
+                    }
+                    if (forbidden) continue;
+                }
+
+                // compute depth of new position using HTM or QTM
+                int newDepth;
+                if (metric == 0) { // HTM
+                    newDepth = depth - 1;
+                } else { // QTM
+                    newDepth = depth - iter->second.qtm;
+                }
+                if (newDepth < 0) continue; // not enough depth for this move? try the next one
+
+                // compute new position
+                applyMove(state, new_state, iter->second.state, datasets);
+
+                // decrement applicable move limits, and check if we got into an unsolvable state
+                if (using_limits) {
+                    bool isSolvable = true; // see if we have stumbled into a situation that requires more of the limited moves
+                    for (unsigned int i=0; i<localMoveLimits.size(); i++) {
+                        if (limitMatches(localMoveLimits[i], iter->second)) {
+                            localMoveLimits[i].limit--;
+                            if (localMoveLimits[i].limit == 0) {
+                                isSolvable = isSolvable && stillSolvable(new_state, solved, ignore, localMoveLimits[i].owned);
+                            }
+                        }
+                    }
+                    if (!isSolvable) {
+                        for (unsigned int i=0; i<moveLimits.size(); i++)
+                            if (limitMatches(localMoveLimits[i], iter->second))
+                                localMoveLimits[i].limit++;
+                        continue;
+                    }
+                }
+
+                // recurse!
+                if (treeSolve(new_state, solved, moves, datasets, prunetables, forbiddenPairs, ignore, blocks, newDepth, metric, localMoveLimits, sequence + " " + iter->second.name, iter->first, false))
+                    success = true;
+
+                // clean up modified move limits
+                if (using_limits)
+                    for (unsigned int i=0; i<localMoveLimits.size(); i++)
+                        if (limitMatches(localMoveLimits[i], iter->second))
+                            localMoveLimits[i].limit++;
+            }
+            // free new_state memory
+            for (iter2 = state.begin(); iter2 != state.end(); iter2++){
+                delete new_state[iter2->first].permutation;
+                delete new_state[iter2->first].orientation;
+            }
+        }
+	}
+    else {
+        Position new_state;
+        Position::iterator iter2;
+        for (iter2 = state.begin(); iter2 != state.end(); iter2++){
+            new_state[iter2->first] = newSubstate(iter2->second.size);
+        }
+        MoveList::iterator iter = moves.begin();
+        for (iter = moves.begin(); iter != moves.end(); iter++){
+            // if we have a forbidden pair, try the next move
+            if (forbiddenPairs.find(MovePair(old_move, iter->first)) != forbiddenPairs.end())
+                continue;
+            // if this move breaks the blocks, try the next move
+            if (using_blocks)
+                if (!blockLegal(state, blocks, iter->second.state))
+                    continue;
+            // if movelimits make this move impossible, try the next move
+            if (using_limits) {
+                bool forbidden = false;
+                for (unsigned int i=0; i<moveLimits.size(); i++) {
+                    if (moveLimits[i].limit <= 0 && limitMatches(moveLimits[i], iter->second)) {
+                        forbidden = true;
+                        break;
+                    }
+                }
+                if (forbidden) continue;
+            }
+            // compute depth of new position using HTM or QTM
+            int newDepth;
+            if (metric == 0) { // HTM
+                newDepth = depth - 1;
+            } else { // QTM
+                newDepth = depth - iter->second.qtm;
+            }
+            if (newDepth < 0) continue; // not enough depth for this move? try the next one
+
+            // compute new position
+            applyMove(state, new_state, iter->second.state, datasets);
+
+            // decrement applicable move limits, and check if we got into an unsolvable state
+            if (using_limits) {
+                bool isSolvable = true; // see if we have stumbled into a situation that requires more of the limited moves
+                for (unsigned int i=0; i<moveLimits.size(); i++) {
+                    if (limitMatches(moveLimits[i], iter->second)) {
+                        moveLimits[i].limit--;
+                        if (moveLimits[i].limit == 0) {
+                            isSolvable = isSolvable && stillSolvable(new_state, solved, ignore, moveLimits[i].owned);
+                        }
+                    }
+                }
+                if (!isSolvable) {
+                    for (unsigned int i=0; i<moveLimits.size(); i++)
+                        if (limitMatches(moveLimits[i], iter->second))
+                            moveLimits[i].limit++;
+                    continue;
+                }
+            }
+
+            // recurse!
+            if (treeSolve(new_state, solved, moves, datasets, prunetables, forbiddenPairs, ignore, blocks, newDepth, metric, moveLimits, sequence + " " + iter->second.name, iter->first, false))
+                success = true;
+
+            // clean up modified move limits
+            if (using_limits)
+                for (unsigned int i=0; i<moveLimits.size(); i++)
+                    if (limitMatches(moveLimits[i], iter->second))
+                        moveLimits[i].limit++;
+        }
+        // free new_state memory
+        for (iter2 = state.begin(); iter2 != state.end(); iter2++){
+            delete new_state[iter2->first].permutation;
+            delete new_state[iter2->first].orientation;
+        }
+    }
+	return success;
 }
 
 // does this position count as solved?

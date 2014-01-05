@@ -1,0 +1,49 @@
+Name 4x4RwRU
+ 
+Set corners 6 3
+Set wings 16 1
+Set centres 10 1
+ 
+# corners UFL ULB UBR URF DFR DRB
+# wings UFr UFl ULf ULb UBl UBr URb URf DRb DRf FRd FRu RBu RBd DFr DBr
+# centres Ufl Ulb Ubr Urf Fru Frd Brd Bru Drf Drb
+ 
+Solved
+corners
+1 2 3 4 5 6
+0 0 0 0 0 0
+wings
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16
+centres
+1 1 1 1 2 2 3 3 4 4
+End
+ 
+Move Rw
+corners
+1 2 4 5 6 3
+0 0 1 2 1 2
+wings
+15 2 3 4 5 1 12 11 13 14 9 10 8 7 16 6
+centres
+1 2 5 6 9 10 3 4 7 8
+End
+
+Move R
+corners
+1 2 4 5 6 3
+0 0 1 2 1 2
+wings
+1 2 3 4 5 6 12 11 13 14 9 10 8 7 15 16
+centres
+1 2 3 4 5 6 7 8 9 10
+End
+ 
+Move U
+corners
+4 1 2 3 5 6
+0 0 0 0 0 0
+wings
+7 8 1 2 3 4 5 6 9 10 11 12 13 14 15 16
+centres
+4 1 2 3 5 6 7 8 9 10
+End

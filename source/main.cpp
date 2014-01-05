@@ -29,9 +29,11 @@
 #include <sstream>
 #include <stdlib.h>
 #include <string>
-#include <time.h>
 #include <vector>
-#include <windows.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <time.h>
+#include <string.h>
 
 struct ksolve {
 	#include "data.h"
@@ -51,7 +53,7 @@ struct ksolve {
 		srand(time(NULL)); // initialize RNG in case we need it
 
 		if (argc != 3){
-			std::cerr << "ksolve+ v1.0\n";
+			std::cerr << "ksolve+ v1.3a - Linux Port by Matt Stiefel\n";
 			std::cerr << "(c) 2007-2013 by Kare Krig and Michael Gottlieb\n";
 			std::cerr << "Usage: ksolve [def-file] [scramble-file]\n";
 			std::cerr << "See readme for additional help.\n";
@@ -89,7 +91,7 @@ struct ksolve {
 		
 		//datasets = updateDatasets(datasets, tables);
 		updateDatasets(datasets, tables);
-		
+
 		// God's Algorithm tables
 		std::string godHTM = "!";
 		std::string godQTM = "!q";
@@ -116,7 +118,7 @@ struct ksolve {
 			string temp_a, temp_b;
 			temp_a = " ";
 
-			std::cout << "\nSolving \"" << scramble.name << "\"\n";
+			std::cout << "\nSolving " << scramble.name.c_str() << "\n";
 			
 			if (scramble.printState == 1) {
 				std::cout << "Scramble position:\n";
@@ -154,7 +156,7 @@ struct ksolve {
 			// The tree-search for the solution(s)
 			int usedSlack = 0;
 			while(1) {
-				boolean foundSolution = treeSolve(scramble.state, solved, moves, datasets, tables, forbidden, scramble.ignore, blocks, depth, scramble.metric, scramble.moveLimits, temp_a, -1);
+				bool foundSolution = treeSolve(scramble.state, solved, moves, datasets, tables, forbidden, scramble.ignore, blocks, depth, scramble.metric, scramble.moveLimits, temp_a, -1);
 				if (foundSolution || usedSlack > 0) {
 					usedSlack++;
 					if (usedSlack > scramble.slack) break;

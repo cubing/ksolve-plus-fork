@@ -34,33 +34,34 @@ static PruneTable getCompletePruneTables(Position solved, MoveList moves, PieceT
 	
 	if (tablesExist) {
 		fin.close(); // close ifstream so we can open a handle
+
+		// Changed HANDLE, FILETIME, GetFileTime, CreateFile, and CompareFileTime to Linux/C++ Equivalent -Matt S.
+		struct stat defWrite, tableWrite;
+		std::ofstream defHandle, tableHandle;
 		
-		FILETIME defWrite, tableWrite;
-		HANDLE defHandle, tableHandle;
-		
-		defHandle = CreateFile(filename.c_str(), GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-		if (defHandle == INVALID_HANDLE_VALUE) {
+		defHandle.open(filename.c_str(), std::ios::in | std::ios::binary);
+		if (!defHandle.is_open()) {
 			std::cerr << "defHandle fail\n";
 			exit(-1);
 		}
-		if (!GetFileTime(defHandle, NULL, NULL, &defWrite)) {
-			std::cerr << "GetFileTime of def fail\n";
+		if (stat(filename.c_str(), &defWrite) == -1) {
+			std::cerr << "stat of def fail\n";
 			exit(-1);
 		}
-		CloseHandle(defHandle);
+		defHandle.close();
 		
-		tableHandle = CreateFile(filename2.c_str(), GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-		if (tableHandle == INVALID_HANDLE_VALUE) {
+		tableHandle.open(filename2.c_str(), std::ios::in | std::ios::binary);
+		if (!tableHandle.is_open()) {
 			std::cerr << "tableHandle fail\n";
 			exit(-1);
 		}
-		if (!GetFileTime(tableHandle, NULL, NULL, &tableWrite)) {
-			std::cerr << "GetFileTime of table fail\n";
+		if (stat(filename2.c_str(), &tableWrite) == -1) {
+			std::cerr << "stat of table fail\n";
 			exit(-1);
 		}
-		CloseHandle(tableHandle);
+		tableHandle.close();
 
-		if (CompareFileTime(&defWrite, &tableWrite) == 1) { // yes, def file is newer!
+		if (difftime(defWrite.st_mtime, tableWrite.st_mtime) > 0) { // yes, def file is newer!
 			oldTables = true;
 		}
 		

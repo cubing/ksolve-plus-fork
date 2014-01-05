@@ -43,7 +43,10 @@ public:
 		while(!fin.eof()){
 			string command;
 			fin >> command;
-
+			// Break if nothing is found on file
+			if (command.size() == 0) { 
+				break;
+			}
 			// Scramble - read a single scramble's definition
 			if (command == "Scramble"){
 				getline(fin, name);

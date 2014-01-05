@@ -1,4 +1,4 @@
-                      ksolve+ v1.3
+                      ksolve+ v1.3a
                      (c)  2007-2013
             by Kare Krig and Michael Gottlieb
 
@@ -275,6 +275,7 @@ It is possible to define all of the centers together as one piece group in this 
 ###### Version History ######
 
 (ksolve+)
+1.3a Ported program to Linux -Matt S. and cubizh
 1.3  Optimized indexing code for non-unique permutations
      Changed data structure for moves, speeds everything up
      God's Alg tables can be generated for puzzles with > 2^63 positions, although it's slower

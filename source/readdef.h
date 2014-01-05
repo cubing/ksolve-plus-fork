@@ -35,7 +35,9 @@ public:
 		while(!fin.eof()){
 				string command;
 				fin >> command;
-				
+				if (command.size() == 0) {
+					break;
+				}
 				if (command == "Name"){
 					getline(fin, name);
 				}

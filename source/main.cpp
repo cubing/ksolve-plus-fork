@@ -48,7 +48,7 @@ struct ksolve {
 	#include "god.h"
 
 	static int ksolveMain(int argc, char *argv[]) {
-		clock_t start; 
+		clock_t start;
 		start = clock();
 		srand(time(NULL)); // initialize RNG in case we need it
 
@@ -69,7 +69,7 @@ struct ksolve {
 		Position ignore = ruleset.getIgnore();
 		std::vector<Block> blocks = ruleset.getBlocks();
 		std::cout << "Ruleset loaded.\n";
-		
+
 		// Print all generated moves
 		std::cout << "Generated moves: ";
 		int i = 0;
@@ -88,7 +88,7 @@ struct ksolve {
 		string deffile(argv[1]);
 		tables = getCompletePruneTables(solved, moves, datasets, ignore, deffile);
 		std::cout << "Pruning tables loaded.\n";
-		
+
 		//datasets = updateDatasets(datasets, tables);
 		updateDatasets(datasets, tables);
 
@@ -119,12 +119,12 @@ struct ksolve {
 			temp_a = " ";
 
 			std::cout << "\nSolving " << scramble.name.c_str() << "\n";
-			
+
 			if (scramble.printState == 1) {
 				std::cout << "Scramble position:\n";
 				printPosition(scramble.state);
 			}
-			
+
 			// give out a warning if we have some undefined permutations on a bandaged puzzle
 			if (blocks.size() != 0) {
 				bool hasUndefined = false;
@@ -141,7 +141,7 @@ struct ksolve {
 					std::cout << "Warning: using blocks, but scramble has unknown (?) permutations!\n";
 				}
 			}
-			
+
 			// get rid of any moves that are zeroed out in moveLimits
 			// and set .limited for each move
 			MoveList moves2;
@@ -150,13 +150,13 @@ struct ksolve {
 				moves2[iter2->first] = iter2->second;
 			}
 			processMoveLimits(moves2, scramble.moveLimits);
-			
+
 			std::cout << "Depth 0\n";
-	 
+
 			// The tree-search for the solution(s)
 			int usedSlack = 0;
 			while(1) {
-				bool foundSolution = treeSolve(scramble.state, solved, moves, datasets, tables, forbidden, scramble.ignore, blocks, depth, scramble.metric, scramble.moveLimits, temp_a, -1);
+				bool foundSolution = treeSolve(scramble.state, solved, moves, datasets, tables, forbidden, scramble.ignore, blocks, depth, scramble.metric, scramble.moveLimits, temp_a, -1, true);
 				if (foundSolution || usedSlack > 0) {
 					usedSlack++;
 					if (usedSlack > scramble.slack) break;
@@ -171,7 +171,7 @@ struct ksolve {
 			std::cout << "\n";
 
 			scramble = states.getScramble();
-		}        
+		}
 
 		std::cout << "Time: " << (clock() - start) / (double)CLOCKS_PER_SEC << "s\n";
 

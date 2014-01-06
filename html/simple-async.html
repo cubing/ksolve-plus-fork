@@ -1,0 +1,75 @@
+<center><textarea id="def" style="width: 45%; height: 50%;">Name 2x2
+
+# def-file by Kåre Krig
+# CORNERS: UBL UBR UFR UFL DBR DFR DFL
+# DBL is fixed. No B,L,D moves.
+
+Set CORNERS 7 3
+
+Solved
+CORNERS
+1 2 3 4 5 6 7
+End
+
+Move U
+CORNERS
+4 1 2 3 5 6 7
+End
+
+Move R
+CORNERS
+1 3 6 4 2 5 7
+0 2 1 0 1 2 0
+End
+
+Move F
+CORNERS
+1 2 4 7 5 3 6
+0 0 2 1 0 1 2
+End</textarea>
+<textarea id="scramble" style="width: 45%; height: 50%">Scramble 2-flip
+CORNERS
+1 2 3 4 5 6 7
+2 0 1 0 0 0 0
+End
+
+ScrambleAlg Jperm
+R U R' F' R U R' U' R' F R2 U' R' U'
+End
+
+RandomScramble random!
+End</textarea>
+<br>
+<button onclick='solve();' style="font-size: 200%;">Go!</button>
+<br>
+<textarea style="width: 100%; height: 40%; font-family: monospace;" id="result">Output will go here.
+</textarea>
+</center>
+<script>
+
+var worker;
+
+var go = function() {
+
+  worker = new Worker('ksolve-worker.js');
+
+  worker.addEventListener('message', function(e) {
+
+    console.log(e.data);
+
+    var textarea = document.getElementById("result");
+    textarea.value += e.data + "\n";
+
+    textarea.scrollTop = textarea.scrollHeight;
+  }, false);  
+}
+go();
+
+function solve() {
+  var def = document.getElementById("def").value;
+  var scramble = document.getElementById("scramble").value;
+  worker.postMessage(["solve", def, scramble]); // Send data to our worker.
+}
+
+</script>
+

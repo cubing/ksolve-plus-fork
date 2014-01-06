@@ -48,8 +48,7 @@ struct ksolve {
 	#include "god.h"
 
 	static int ksolveMain(int argc, char *argv[]) {
-		clock_t start;
-		start = clock();
+
 		srand(time(NULL)); // initialize RNG in case we need it
 
 		if (argc != 3){
@@ -60,8 +59,36 @@ struct ksolve {
 			return EXIT_FAILURE;
 		}
 
+
+		std::ifstream definitionStream(argv[1]);
+		if (!definitionStream.good()){
+			std::cout << "Can't open definition file!\n";
+			exit(-1);
+		}
+		std::ifstream scrambleStream(argv[2]);
+		if (!scrambleStream.good()){
+			std::cout << "Can't open scramble file!\n";
+			exit(-1);
+		}
+
+		string defFileName(argv[1]);
+		string scrambleFileName(argv[2]);
+		return ksolveWrapped(definitionStream, scrambleStream, defFileName, scrambleFileName, true);
+
+	}
+
+	static int ksolveWrapped(std::istream &definitionStream,
+													 std::istream &scrambleStream,
+													 string defFileName,
+													 string scrambleFileName,
+													 bool usePruneTable)
+	{
+
+		clock_t start;
+		start = clock();
+
 		// Load the puzzle rules
-		Rules ruleset(argv[1]);
+		Rules ruleset(definitionStream);
 		PieceTypes datasets = ruleset.getDatasets();
 		Position solved = ruleset.getSolved();
 		MoveList moves = ruleset.getMoves();
@@ -85,8 +112,7 @@ struct ksolve {
 
 		// Compute or load the pruning tables
 		PruneTable tables;
-		string deffile(argv[1]);
-		tables = getCompletePruneTables(solved, moves, datasets, ignore, deffile);
+		tables = getCompletePruneTables(solved, moves, datasets, ignore, defFileName, usePruneTable);
 		std::cout << "Pruning tables loaded.\n";
 
 		//datasets = updateDatasets(datasets, tables);
@@ -95,12 +121,12 @@ struct ksolve {
 		// God's Algorithm tables
 		std::string godHTM = "!";
 		std::string godQTM = "!q";
-		if (0==godHTM.compare(argv[2])) {
+		if (0==godHTM.compare(scrambleFileName)) {
 			std::cout << "Computing God's Algorithm tables (HTM)\n";
 			godTable(solved, moves, datasets, forbidden, ignore, blocks, 0);
 			std::cout << "Time: " << (clock() - start) / (double)CLOCKS_PER_SEC << "s\n";
 			return EXIT_SUCCESS;
-		} else if (0==godQTM.compare(argv[2])) {
+		} else if (0==godQTM.compare(scrambleFileName)) {
 			std::cout << "Computing God's Algorithm tables (QTM)\n";
 			godTable(solved, moves, datasets, forbidden, ignore, blocks, 1);
 			std::cout << "Time: " << (clock() - start) / (double)CLOCKS_PER_SEC << "s\n";
@@ -108,7 +134,7 @@ struct ksolve {
 		}
 
 		// Load the scramble to be solved
-		Scramble states(argv[2], solved, moves, datasets, blocks);
+		Scramble states(scrambleStream, solved, moves, datasets, blocks);
 		std::cout << "Scrambles loaded.\n";
 
 		ScrambleDef scramble = states.getScramble();
@@ -181,4 +207,10 @@ struct ksolve {
 
 int main(int argc, char *argv[]) {
 	ksolve::ksolveMain(argc, argv);
+}
+
+extern "C" void solve(char* definition, char* state) {
+	std::istringstream definitionStream(definition);
+	std::istringstream scrambleStream(state);
+	ksolve::ksolveWrapped(definitionStream, scrambleStream, "dummy", "dummy", false);
 }

@@ -22,14 +22,14 @@
 #ifndef PRUNING_H
 #define PRUNING_H
 
-static PruneTable getCompletePruneTables(Position solved, MoveList moves, PieceTypes datasets, Position ignore, string filename)
+static PruneTable getCompletePruneTables(Position solved, MoveList moves, PieceTypes datasets, Position ignore, string filename, bool usePruneTable)
 {
 	PruneTable table;
 	string filename2 = filename + ".tables";
 	std::ifstream fin;
 	fin.open(filename2.c_str(), std::ios::in | std::ios::binary);
 	
-	bool tablesExist = fin.is_open(); // do tables exist?
+	bool tablesExist = usePruneTable && fin.is_open(); // do tables exist?
 	bool oldTables = false; // are the tables older than the def file?
 	
 	if (tablesExist) {

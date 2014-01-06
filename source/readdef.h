@@ -24,13 +24,8 @@
 
 class Rules {
 public:
-	Rules(string filename){
+	Rules(std::istream &fin){
 		moveid = 0;
-		std::ifstream fin(filename.c_str());
-		if (!fin.good()){
-			std::cout << "Can't open puzzle definition!\n";
-			exit(-1);
-		}
 			
 		while(!fin.eof()){
 				string command;
@@ -404,7 +399,7 @@ private:
 	}
 	
 	// read in a position from fin
-	Position readPosition(std::ifstream& fin, bool checkUnique, bool setUnique, string title) {
+	Position readPosition(std::istream& fin, bool checkUnique, bool setUnique, string title) {
 		Position newPosition;
 		string setname, tmpStr;
 		long i, tmpInt;

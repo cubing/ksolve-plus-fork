@@ -25,7 +25,7 @@
 class Scramble
 {
 public:
-	Scramble(string filename, Position& solved, MoveList& moves, PieceTypes datasets, std::vector<Block>& blocks){
+	Scramble(std::istream &fin, Position& solved, MoveList& moves, PieceTypes datasets, std::vector<Block>& blocks){
 		sent = 0;
 		int current_max = 999;
 		int current_slack = 0;
@@ -34,11 +34,6 @@ public:
 		Position ignore;
 		string name;
 		moveLimits.clear();
-		std::ifstream fin(filename.c_str());
-		if (!fin.good()){
-			std::cout << "Can't open scramble file!\n";
-			exit(-1);
-		}
 	   
 		while(!fin.eof()){
 			string command;

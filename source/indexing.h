@@ -23,13 +23,13 @@
 #define INDEXING_H
 
 // Convert vector of orientations into an index
-static int oVector2Index(std::vector<int> orientations, int omod) {
+static long long oVector2Index(std::vector<int> orientations, int omod) {
 	return oVector2Index(orientations.data(), orientations.size(), omod);
 }
 
 // Convert array of orientations into an index
-static int oVector2Index(int orientations[], int size, int omod) {
-	int tmp = 0;
+static long long oVector2Index(int orientations[], int size, int omod) {
+	long long tmp = 0;
 	for (int i = 0; i < size; i++){
 		tmp = tmp*omod + orientations[i];
 	}
@@ -37,8 +37,8 @@ static int oVector2Index(int orientations[], int size, int omod) {
 }
 
 // Convert array of orientations (with parity constraint) into an index
-static int oparVector2Index(int orientations[], int size, int omod) {
-	int tmp = 0;
+static long long oparVector2Index(int orientations[], int size, int omod) {
+	long long tmp = 0;
 	for (int i = 0; i < size - 1; i++){
 		tmp = tmp*omod + orientations[i];
 	}
@@ -46,7 +46,7 @@ static int oparVector2Index(int orientations[], int size, int omod) {
 }
 
 // Convert orientation index into a vector
-static std::vector<int> oIndex2Vector(int index, int size, int omod) {
+static std::vector<int> oIndex2Vector(long long index, int size, int omod) {
 	std::vector<int> orientations;
 	orientations.resize(size);
 	for (int i = size - 1; i >= 0; i--){
@@ -57,7 +57,7 @@ static std::vector<int> oIndex2Vector(int index, int size, int omod) {
 }
 
 // Convert orientation index into an array
-static int* oIndex2Array(int index, int size, int omod) {
+static int* oIndex2Array(long long index, int size, int omod) {
 	int* orientation = new int[size];
 	for (int i = size - 1; i >= 0; i--){
 		orientation[i] = index % omod;
@@ -67,7 +67,7 @@ static int* oIndex2Array(int index, int size, int omod) {
 }
 
 // Convert orientation index (with parity constraint) into an array
-static int* oparIndex2Array(int index, int size, int omod) {
+static int* oparIndex2Array(long long index, int size, int omod) {
 	int* orientation = new int[size];
 	orientation[size - 1] = 0;
 	for (int i = size - 2; i >= 0; i--){
@@ -80,13 +80,13 @@ static int* oparIndex2Array(int index, int size, int omod) {
 }
 
 // Convert permutation vector (unique) into an index
-static int pVector2Index(std::vector<int> permutation) {
+static long long pVector2Index(std::vector<int> permutation) {
 	return pVector2Index(permutation.data(), permutation.size());
 }
 
 // Convert permutation array (unique) into an index
-static int pVector2Index(int permutation[], int size) {
-	int t = 0;
+static long long pVector2Index(int permutation[], int size) {
+	long long t = 0;
 	for (int i = 0; i < size - 1; i++){
 		t *= (size - i);
 		for (int j = i+1; j<size; j++)
@@ -97,7 +97,7 @@ static int pVector2Index(int permutation[], int size) {
 }
 
 // Convert index into a permutation array (unique)
-static int* pIndex2Array(int index, int size) {
+static int* pIndex2Array(long long index, int size) {
 	int* permutation = new int[size];
 	permutation[size-1] = 1;
 	for (int i = size - 2; i >= 0; i--){
@@ -248,11 +248,10 @@ static std::vector<long long> packVector(std::vector<int> vec){
        
 static std::vector<long long> packVector(int vec[], int size){
 	std::vector<long long> result (1 + size/8);
-	
 	for (int i = 0; i < size; i += 8) {
 		long long element = 0;
 		for (int j = 0; j < 8; j++)
-			if (i+j < size) element += ((long long)vec[i+j]) << (8*j);
+			if (i+j < size) element += (1LL+vec[i+j]) << (8*j);
 		result[i/8] = element;
 	}
 	return result;
@@ -271,7 +270,8 @@ static std::vector<int> unpackVector(std::vector<long long> vec){
 	}
 	while(result[result.size() - 1] == 0)
 			result.pop_back();
-	
+	for (int i=0; i<result.size(); i++)
+           result[i]-- ;
 	return result;
 }
 

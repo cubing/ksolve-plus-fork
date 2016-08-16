@@ -91,7 +91,7 @@ static PruneTable getCompletePruneTables(Position solved, MoveList moves, PieceT
 				for (int i = 0; i < tab_size; i++){
 					table[iter->first].permutation.push_back(tmp_buff[i]);
 				}
-				delete tmp_buff;
+				delete[] tmp_buff;
 			
 			}
 			else if (combinations(solved[iter->first].permutation, size) <= MAX_COMPLETE_PERMUTATION_TABLE_SIZE && combinations(solved[iter->first].permutation, size) != -1 && !uniquePermutation(solved[iter->first].permutation, size)){ 
@@ -139,7 +139,7 @@ static PruneTable getCompletePruneTables(Position solved, MoveList moves, PieceT
 					for (int i = 0; i < num; i++){
 						table[iter->first].orientation.push_back(tmp_buff[i]);
 					}
-					delete tmp_buff;
+					delete[] tmp_buff;
 			}    
 			else{ // Partial orientation tables
 				int elements, keysize;

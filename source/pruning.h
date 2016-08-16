@@ -577,7 +577,7 @@ static std::map<std::vector<long long>, char> buildPartialOrientationPruningTabl
 	do
 	{
 		c = 0;
-		for (iter2 = table.begin(); iter2 != table.end(); iter++){
+		for (iter2 = table.begin(); iter2 != table.end(); iter2++){
 			if (iter2->second == len && !abort){
 				std::vector<int> pos = unpackVector(iter2->first);
 				for (iter = moves.begin(); iter != moves.end(); iter++){

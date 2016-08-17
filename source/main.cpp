@@ -66,7 +66,7 @@ struct ksolve {
 			exit(-1);
 		}
 		std::ifstream scrambleStream(argv[2]);
-		if (!scrambleStream.good()){
+		if (strcmp(argv[2], "!") != 0 && !scrambleStream.good()){
 			std::cout << "Can't open scramble file!\n";
 			exit(-1);
 		}

@@ -136,7 +136,7 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 		distMap2[packPosition2(solved, subSizes, datasets)] = 0;
 	}
 	std::cout << "Moves\tPositions\n";
-	std::cout << depth << "\t" << cnt[depth] << "\n";
+	std::cout << depth << "\t" << cnt[depth] << "\n"<<std::flush;
 	
 	// Loop through depths
 	if (dataStructure==0) {
@@ -174,7 +174,7 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 			// increment depth and print
 			depth++;
 			if (cnt[depth] == 0) break;
-			std::cout << depth << "\t" << cnt[depth] << "\n";
+			std::cout << depth << "\t" << cnt[depth] << "\n" << std::flush;
 		}
 	} else if (dataStructure==1) {
 		while (1) {
@@ -216,7 +216,7 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 			// increment depth and print
 			depth++;
 			if (cnt[depth] == 0) break;
-			std::cout << depth << "\t" << cnt[depth] << "\n";
+			std::cout << depth << "\t" << cnt[depth] << "\n" << std::flush;
 		}
 	} else if (dataStructure==2) {
 		while (1) {
@@ -258,7 +258,7 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 			// increment depth and print
 			depth++;
 			if (cnt[depth] == 0) break;
-			std::cout << depth << "\t" << cnt[depth] << "\n";
+			std::cout << depth << "\t" << cnt[depth] << "\n" << std::flush;
 		}
 	}
 	

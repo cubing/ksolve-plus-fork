@@ -429,7 +429,7 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 }
 
 // "Pack" a full-puzzle position - convert it from a position into a number
-static long long packPosition(Position& position, std::map<std::pair<string, int>, long long> subSizes, PieceTypes& datasets) {
+static long long packPosition(Position& position, std::map<std::pair<string, int>, long long> &subSizes, PieceTypes& datasets) {
 	std::map<std::pair<string, int>, long long>::iterator iter;
 	long long packed = 0;
 	for (iter = subSizes.begin(); iter != subSizes.end(); iter++) {
@@ -495,7 +495,7 @@ static std::vector<long long> packPosition2(Position& position, std::map<std::pa
 }
 
 // "Unpack" a full-puzzle position - convert it from a number into a position
-static Position unpackPosition(long long position, std::map<std::pair<string, int>, long long> subSizes, PieceTypes& datasets, Position& solved) {
+static Position unpackPosition(long long position, std::map<std::pair<string, int>, long long> &subSizes, PieceTypes& datasets, Position& solved) {
 	// construct a new Position with blank versions of everything
 	Position unpacked;
 	PieceTypes::iterator iter2;

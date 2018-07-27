@@ -441,6 +441,7 @@ private:
 			}
 			if (setUnique) {
 				datasets[setname].uniqueperm = uniquePermutation(newPosition[setname].permutation, newPosition[setname].size);
+				calcOtherValues(datasets[setname], newPosition[setname].permutation) ;
 			}
 			
 			// set orientation to zeros (in case user did not give it)
@@ -501,6 +502,24 @@ private:
 		}
 		
 		return newPosition;
+	}
+	int ceillog2(int v) {
+		int r = 0 ;
+		while ((1LL << r) < v)
+			r++ ;
+		return r ;
+	}
+	void calcOtherValues(dataset &ds, int *perm) {
+		ds.maxInSolved = 1 ;
+		for (int i=0; i<ds.size; i++)
+			if (perm[i] <= 0) {
+				std::cerr << "Saw a nonpositive in perm" << std::endl ;
+				exit(-1) ;
+			} else if (perm[i] > ds.maxInSolved) {
+				ds.maxInSolved = perm[i] ;
+			}
+		ds.permbits = ceillog2(ds.maxInSolved-1) ;
+		ds.oribits = ceillog2(ds.omod) ;
 	}
 };
 

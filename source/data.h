@@ -43,6 +43,8 @@ struct dataset{
 	int type;
 	int size;
 	int omod; // Orientations are calculated mod this value
+	int maxInSolved; // maximum value in solved perm; assumes 1-base
+	int permbits, oribits ; // bits for perm and ori
 	int ptabletype;
 	int otabletype;
 	bool uniqueperm; // Perm of unique numbers (1,2,3,...), or repeated (1,3,1,2)

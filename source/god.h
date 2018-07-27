@@ -133,7 +133,7 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 	} else if (dataStructure==1) {
 		distMap1[packPosition(solved, subSizes, datasets)] = 0;
 	} else if (dataStructure==2) {
-		distMap2[packPosition2(solved, subSizes, datasets)] = 0;
+		distMap2[packPosition2(solved, subSizes, datasets, 0)] = 0;
 	}
 	std::cout << "Moves\tPositions\n";
 	std::cout << depth << "\t" << cnt[depth] << "\n"<<std::flush;
@@ -233,7 +233,7 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 					
 						// apply move and pack new position
 						applyMove(temp1, temp2, moveIter->second.state, datasets);
-						std::vector<long long> packTemp = packPosition2(temp2, subSizes, datasets);
+						std::vector<long long> packTemp = packPosition2(temp2, subSizes, datasets, mapIter->first.size());
 						
 						if (metric == 0) { // HTM
 							if (distMap2.find(packTemp) == distMap2.end()) { // not visited yet
@@ -399,7 +399,7 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 								continue;
 						
 						applyMove(curPos, nextPos, moveIter->second.state, datasets);
-						int nextDepth = distMap2[packPosition2(nextPos, subSizes, datasets)];
+						int nextDepth = distMap2[packPosition2(nextPos, subSizes, datasets, mapIter->first.size())];
 						if (nextDepth < minDepth) {
 							minDepth = nextDepth;
 							minIndex = moveIter->first;
@@ -455,27 +455,42 @@ static long long packPosition(Position& position, std::map<std::pair<string, int
 }
 
 // "Pack" a full-puzzle position - convert it from a position into a *vector*
-static std::vector<long long> packPosition2(Position& position, std::map<std::pair<string, int>, long long> subSizes, PieceTypes& datasets) {
-	std::vector<long long> packed (subSizes.size());
-	int i = 0;
-	std::map<std::pair<string, int>, long long>::iterator iter;
-	for (iter = subSizes.begin(); iter != subSizes.end(); iter++) {
-		// then, add a number corresponding to that subSize's part
-		if (iter->first.second == 0) {
-			packed[i] = oparVector2Index(position[iter->first.first].orientation, position[iter->first.first].size, datasets[iter->first.first].omod);
-		} else if (iter->first.second == 1) {
-			packed[i] = oVector2Index(position[iter->first.first].orientation, position[iter->first.first].size, datasets[iter->first.first].omod);
-		} else if (iter->first.second == 2) {
-			packed[i] = pVector2Index(position[iter->first.first].permutation, position[iter->first.first].size);
-		} else if (iter->first.second == 3) {
-			packed[i] = pVector3Index(position[iter->first.first].permutation, position[iter->first.first].size);
-		} else {
-			std::cerr << "Something wrong with these subSizes!\n";
-			exit(-1);
-		}
-		i++;
+static std::vector<long long> packPosition2(Position& position, std::map<std::pair<string, int>, long long> &ignored_subSizes, PieceTypes& datasets, int siz) {
+	std::vector<long long> packed ;
+	packed.reserve(siz) ;
+	unsigned long long accum = 0 ;
+	int bitAt = 0 ;
+	PieceTypes::iterator iter2;
+	for (iter2 = datasets.begin(); iter2 != datasets.end(); iter2++) {
+		int n = iter2->second.size ;
+		substate &s = position[iter2->first] ;
+		int *perm = s.permutation ;
+		int permBits = iter2->second.permbits ;
+		int permMask = (1<<permBits)-1 ;
+		for (int i=0; i<n; i++) {
+                        if (bitAt + permBits > 64) {
+				packed.push_back(accum) ;
+				accum = 0 ;
+				bitAt = 0 ;
+			}
+			accum |= ((unsigned long long)perm[i]-1) << bitAt ;
+                        bitAt += permBits ;
+                }
+		int *ori = s.orientation ;
+		int oriBits = iter2->second.oribits ;
+		int oriMask = (1<<oriBits)-1 ;
+		for (int i=0; i<n; i++) {
+                        if (bitAt + oriBits > 64) {
+				packed.push_back(accum) ;
+				accum = 0 ;
+				bitAt = 0 ;
+			}
+			accum |= ((unsigned long long)ori[i]) << bitAt ;
+                        bitAt += oriBits ;
+                }
 	}
-	
+	if (bitAt > 0)
+		packed.push_back(accum) ;
 	return packed;
 }
 
@@ -516,41 +531,44 @@ static Position unpackPosition(long long position, std::map<std::pair<string, in
 }
 
 // "Unpack" a full-puzzle position - convert it from a number into a *vector*
-static Position unpackPosition2(std::vector<long long> position, std::map<std::pair<string, int>, long long> subSizes, PieceTypes& datasets, Position& solved) {
+static Position unpackPosition2(const std::vector<long long> &position, std::map<std::pair<string, int>, long long> &ignored_subSizes, PieceTypes& datasets, Position& ignored_solved) {
 	// construct a new Position with blank versions of everything
 	Position unpacked;
 	PieceTypes::iterator iter2;
+	int positionAt = 0 ;
+	int bitAt = 0 ;
 	for (iter2 = datasets.begin(); iter2 != datasets.end(); iter2++) {
 		substate blankState;
-		blankState.size = iter2->second.size;
+		int n = iter2->second.size ;
+		blankState.size = n ;
+		int *perm = (int *)calloc(sizeof(int), n) ;
+		int permBits = iter2->second.permbits ;
+		int permMask = (1<<permBits)-1 ;
+		for (int i=0; i<n; i++) {
+                        if (bitAt + permBits > 64) {
+				bitAt = 0 ;
+				positionAt++ ;
+			}
+			perm[i] = 1 + (permMask &
+                      (((unsigned long long)position[positionAt]) >> bitAt)) ;
+                        bitAt += permBits ;
+                }
+		blankState.permutation = perm ;
+		int *ori = (int *)calloc(sizeof(int), n) ;
+		int oriBits = iter2->second.oribits ;
+		int oriMask = (1<<oriBits)-1 ;
+		for (int i=0; i<n; i++) {
+                        if (bitAt + oriBits > 64) {
+				bitAt = 0 ;
+				positionAt++ ;
+			}
+			ori[i] = oriMask &
+                      (((unsigned long long)position[positionAt]) >> bitAt) ;
+                        bitAt += oriBits ;
+                }
+		blankState.orientation = ori ;
 		unpacked.insert(std::pair<string, substate> (iter2->first, blankState));
 	}
-	
-	std::map<std::pair<string, int>, long long>::reverse_iterator iter;
-	int i = position.size() - 1;
-	for (iter = subSizes.rbegin(); iter != subSizes.rend(); iter++) {
-		// get the current index
-		long long curIndex = position[i];
-		i--;
-		
-		// now convert it into a permutation or orientation
-		int size = unpacked[iter->first.first].size;
-		if (iter->first.second == 0) {
-			unpacked[iter->first.first].orientation = oparIndex2Array(curIndex, size, datasets[iter->first.first].omod);
-		} else if (iter->first.second == 1) {
-			unpacked[iter->first.first].orientation = oIndex2Array(curIndex, size, datasets[iter->first.first].omod);
-		} else if (iter->first.second == 2) {
-			unpacked[iter->first.first].permutation = pIndex2Array(curIndex, size);
-		} else if (iter->first.second == 3) {
-			unpacked[iter->first.first].permutation = pIndex3Array(curIndex, solved[iter->first.first].permutation, solved[iter->first.first].size);
-		} else {
-			std::cerr << "Something wrong with these subSizes!\n";
-			exit(-1);
-		}	
-	}
-	
-	position.clear();
-	
 	return unpacked;
 }
 

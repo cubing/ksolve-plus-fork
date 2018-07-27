@@ -92,7 +92,7 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 	int dataStructure = 0; // 0 = array, 1 = map<longlong,char>,
 	                        // 2 = map<vector<longlong>,char>
 	signed char* distance = NULL;
-	if (logSize < 31*log(2)) { // just don't bother trying to get >2^31 bytes
+	if (logSize < 34*log(2)) { // just don't bother trying to get >2^31 bytes
 		distance = new (std::nothrow) signed char[(std::size_t) totalSize];
 	}
 	std::map<long long, signed char> distMap1;

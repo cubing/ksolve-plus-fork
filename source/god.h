@@ -476,17 +476,19 @@ static std::vector<long long> packPosition2(Position& position, std::map<std::pa
 			accum |= ((unsigned long long)perm[i]-1) << bitAt ;
                         bitAt += permBits ;
                 }
-		int *ori = s.orientation ;
 		int oriBits = iter2->second.oribits ;
-		int oriMask = (1<<oriBits)-1 ;
-		for (int i=0; i<n; i++) {
-                        if (bitAt + oriBits > 64) {
-				packed.push_back(accum) ;
-				accum = 0 ;
-				bitAt = 0 ;
+		if (oriBits) {
+			int *ori = s.orientation ;
+			int oriMask = (1<<oriBits)-1 ;
+			for (int i=0; i<n; i++) {
+                        	if (bitAt + oriBits > 64) {
+					packed.push_back(accum) ;
+					accum = 0 ;
+					bitAt = 0 ;
+				}
+				accum |= ((unsigned long long)ori[i]) << bitAt ;
+                        	bitAt += oriBits ;
 			}
-			accum |= ((unsigned long long)ori[i]) << bitAt ;
-                        bitAt += oriBits ;
                 }
 	}
 	if (bitAt > 0)
@@ -556,15 +558,17 @@ static Position unpackPosition2(const std::vector<long long> &position, std::map
 		blankState.permutation = perm ;
 		int *ori = (int *)calloc(sizeof(int), n) ;
 		int oriBits = iter2->second.oribits ;
-		int oriMask = (1<<oriBits)-1 ;
-		for (int i=0; i<n; i++) {
-                        if (bitAt + oriBits > 64) {
-				bitAt = 0 ;
-				positionAt++ ;
+		if (oriBits) {
+			int oriMask = (1<<oriBits)-1 ;
+			for (int i=0; i<n; i++) {
+                        	if (bitAt + oriBits > 64) {
+					bitAt = 0 ;
+					positionAt++ ;
+				}
+				ori[i] = oriMask &
+                      	(((unsigned long long)position[positionAt]) >> bitAt) ;
+                        	bitAt += oriBits ;
 			}
-			ori[i] = oriMask &
-                      (((unsigned long long)position[positionAt]) >> bitAt) ;
-                        bitAt += oriBits ;
                 }
 		blankState.orientation = ori ;
 		unpacked.insert(std::pair<string, substate> (iter2->first, blankState));

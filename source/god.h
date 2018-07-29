@@ -134,7 +134,7 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 	} else if (dataStructure==1) {
 		distMap1[packPosition(solved, subSizes, datasets)] = 0;
 	} else if (dataStructure==2) {
-		distMap2[packPosition2(solved, subSizes, datasets, 0)] = 0;
+		distMap2[packPosition2(solved, datasets, 0)] = 0;
 	}
 	std::cout << "Moves\tPositions\n";
 	std::cout << depth << "\t" << cnt[depth] << "\n"<<std::flush;
@@ -225,7 +225,7 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 			std::map<std::vector<long long>, signed char>::iterator mapIter;
 			for (mapIter = distMap2.begin(); mapIter != distMap2.end(); mapIter++) {
 				if (mapIter->second == depth) {
-					unpackPosition2(temp1, mapIter->first, subSizes, datasets, solved);
+					unpackPosition2(temp1, mapIter->first, datasets);
 					// try all possible moves and see if that position hasn't been visited
 					for (moveIter = moves.begin(); moveIter != moves.end(); moveIter++){
 						if (using_blocks) // see if the blocks will prevent this move
@@ -234,7 +234,7 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 					
 						// apply move and pack new position
 						applyMove(temp1, temp2, moveIter->second.state, datasets);
-						std::vector<long long> packTemp = packPosition2(temp2, subSizes, datasets, mapIter->first.size());
+						std::vector<long long> packTemp = packPosition2(temp2, datasets, mapIter->first.size());
 						
 						if (metric == 0) { // HTM
 							if (distMap2.find(packTemp) == distMap2.end()) { // not visited yet
@@ -378,7 +378,7 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 		for (mapIter = distMap2.begin(); mapIter != distMap2.end(); mapIter++) {
 			if (mapIter->second == depth - 1) {
 				// found an antipode!
-				unpackPosition2(temp1, mapIter->first, subSizes, datasets, solved);
+				unpackPosition2(temp1, mapIter->first, datasets);
 				Position curPos = temp1;
 				Position nextPos;
 				Position::iterator iter3;
@@ -400,7 +400,7 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 								continue;
 						
 						applyMove(curPos, nextPos, moveIter->second.state, datasets);
-						int nextDepth = distMap2[packPosition2(nextPos, subSizes, datasets, mapIter->first.size())];
+						int nextDepth = distMap2[packPosition2(nextPos, datasets, mapIter->first.size())];
 						if (nextDepth < minDepth) {
 							minDepth = nextDepth;
 							minIndex = moveIter->first;
@@ -456,7 +456,7 @@ static long long packPosition(Position& position, std::map<std::pair<int, int>, 
 }
 
 // "Pack" a full-puzzle position - convert it from a position into a *vector*
-static std::vector<long long> packPosition2(Position& position, std::map<std::pair<int, int>, long long> &ignored_subSizes, PieceTypes& datasets, int siz) {
+static std::vector<long long> packPosition2(Position& position, PieceTypes& datasets, int siz) {
 	std::vector<long long> packed ;
 	packed.reserve(siz) ;
 	unsigned long long accum = 0 ;
@@ -525,7 +525,7 @@ static void unpackPosition(Position &unpacked, long long position, std::map<std:
 }
 
 // "Unpack" a full-puzzle position - convert it from a number into a *vector*
-static void unpackPosition2(Position &unpacked, const std::vector<long long> &position, std::map<std::pair<int, int>, long long> &ignored_subSizes, PieceTypes& datasets, Position& ignored_solved) {
+static void unpackPosition2(Position &unpacked, const std::vector<long long> &position, PieceTypes& datasets) {
 	// construct a new Position with blank versions of everything
 	PieceTypes::iterator iter2;
 	int positionAt = 0 ;

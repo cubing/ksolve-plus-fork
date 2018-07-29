@@ -60,7 +60,7 @@ public:
 					}
 				
 					// Check set names for consistency
-					if (state.find(setindex) != state.end()){
+					if (state[setindex].size == 0){
 						std::cerr << "Set " << setname << " declared more than once in scramble " << name << ".\n";
 						exit(-1);
 					}

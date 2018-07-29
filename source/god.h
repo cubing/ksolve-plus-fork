@@ -31,42 +31,41 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 	//		3 (non-unique permutation)
 	std::map<std::pair<int, int>, long long> subSizes;
 	
-	Position::iterator iter;
-	for (iter = solved.begin(); iter != solved.end(); iter++) {
-		int size = solved[iter->first].size;
-		if (datasets[iter->first].oparity) {
+	for (int iter=0; iter<solved.size(); iter++) {
+		int size = solved[iter].size;
+		if (datasets[iter].oparity) {
 			// Orientation, parity constraint
 			long long tablesize = 1;
 			for (int i = 0; i < size - 1; i++)
-				tablesize *= datasets[iter->first].omod;
+				tablesize *= datasets[iter].omod;
 			subSizes.insert(std::pair<std::pair<int, int>, long long>
-					(std::pair<int, int> (iter->first, 0), tablesize));
+					(std::pair<int, int> (iter, 0), tablesize));
 		} else {
 			// Orientation, no parity constraint
 			long long tablesize = 1;
 			for (int i = 0; i < size; i++)
-				tablesize *= datasets[iter->first].omod;
+				tablesize *= datasets[iter].omod;
 			subSizes.insert(std::pair<std::pair<int, int>, long long>
-					(std::pair<int, int> (iter->first, 1), tablesize));
+					(std::pair<int, int> (iter, 1), tablesize));
 		}
 		
-		if (factorial(datasets[iter->first].size) != -1 && uniquePermutation(solved[iter->first].permutation, size)){
+		if (factorial(datasets[iter].size) != -1 && uniquePermutation(solved[iter].permutation, size)){
 			// Permutation, unique pieces
 			std::vector<int> temp_perm (size);
 			for (int i = 0; i < size; i++)
-				temp_perm[i] = solved[iter->first].permutation[i];
+				temp_perm[i] = solved[iter].permutation[i];
 			long long tablesize = factorial(size);
 			subSizes.insert(std::pair<std::pair<int, int>, long long>
-				(std::pair<int, int> (iter->first, 2), tablesize));
+				(std::pair<int, int> (iter, 2), tablesize));
 		}
 		else {
 			// Permutation, not unique pieces
 			std::vector<int> temp_perm (size);
 			for (int i = 0; i < size; i++)
-				temp_perm[i] = solved[iter->first].permutation[i];
+				temp_perm[i] = solved[iter].permutation[i];
 			long long tablesize = combinations(temp_perm);
 			subSizes.insert(std::pair<std::pair<int, int>, long long>
-				(std::pair<int, int> (iter->first, 3), tablesize));
+				(std::pair<int, int> (iter, 3), tablesize));
 		}
 	}
 	
@@ -122,11 +121,10 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 		cnt[i] = 0;
 	}
 	cnt[0] = 1;
-	Position temp1, temp2;
-	Position::iterator iter3;
-	for (iter3 = solved.begin(); iter3 != solved.end(); iter3++){
-		temp1[iter3->first] = newSubstate(iter3->second.size);
-		temp2[iter3->first] = newSubstate(iter3->second.size);
+	Position temp1(solved.size()), temp2(solved.size());
+	for (int iter3 = 0; iter3 < solved.size(); iter3++) {
+		temp1[iter3] = newSubstate(solved[iter3].size);
+		temp2[iter3] = newSubstate(solved[iter3].size);
 	}
 	MoveList::iterator moveIter;
 	if (dataStructure==0) {
@@ -281,7 +279,7 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 				// found an antipode!
 				unpackPosition(temp1, i, subSizes, datasets, solved);
 				Position curPos = temp1;
-				Position nextPos;
+				Position nextPos(solved.size()) ;
 				Position::iterator iter3;
 				
 				// find a solution
@@ -292,8 +290,8 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 					// try all moves to see which leads to the lowest depth
 					int minDepth = curDepth;
 					int minIndex = -1;
-					for (iter3 = solved.begin(); iter3 != solved.end(); iter3++){
-						nextPos[iter3->first] = newSubstate(iter3->second.size);
+					for (int iter3=0; iter3<solved.size(); iter3++) {
+						nextPos[iter3] = newSubstate(solved[iter3].size);
 					}
 					for (moveIter = moves.begin(); moveIter != moves.end(); moveIter++){
 						if (using_blocks) // see if the blocks will prevent this move
@@ -330,8 +328,7 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 				// found an antipode!
 				unpackPosition(temp1, mapIter->first, subSizes, datasets, solved);
 				Position curPos = temp1;
-				Position nextPos;
-				Position::iterator iter3;
+				Position nextPos(solved.size()) ;
 				
 				// find a solution
 				std::cout << "Antipode solved by";
@@ -341,8 +338,8 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 					// try all moves to see which leads to the lowest depth
 					int minDepth = curDepth;
 					int minIndex = -1;
-					for (iter3 = solved.begin(); iter3 != solved.end(); iter3++){
-						nextPos[iter3->first] = newSubstate(iter3->second.size);
+					for (int iter3=0; iter3<solved.size(); iter3++) {
+						nextPos[iter3] = newSubstate(solved[iter3].size);
 					}
 					for (moveIter = moves.begin(); moveIter != moves.end(); moveIter++){
 						if (using_blocks) // see if the blocks will prevent this move
@@ -380,8 +377,7 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 				// found an antipode!
 				unpackPosition2(temp1, mapIter->first, datasets);
 				Position curPos = temp1;
-				Position nextPos;
-				Position::iterator iter3;
+				Position nextPos(solved.size()) ;
 				
 				// find a solution
 				std::cout << "Antipode solved by";
@@ -391,8 +387,8 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 					// try all moves to see which leads to the lowest depth
 					int minDepth = curDepth;
 					int minIndex = -1;
-					for (iter3 = solved.begin(); iter3 != solved.end(); iter3++){
-						nextPos[iter3->first] = newSubstate(iter3->second.size);
+					for (int iter3=0; iter3<solved.size(); iter3++) {
+						nextPos[iter3] = newSubstate(solved[iter3].size);
 					}
 					for (moveIter = moves.begin(); moveIter != moves.end(); moveIter++){
 						if (using_blocks) // see if the blocks will prevent this move

@@ -70,7 +70,7 @@ struct subprune{
 
 // some typedefs to make things easier
 typedef std::string string;
-typedef std::map<int, substate> Position;
+typedef std::vector<substate> Position;
 typedef std::map<int, std::set<int> > Block;
 typedef std::pair<int, int> MovePair;
 typedef std::map<int, subprune> PruneTable;

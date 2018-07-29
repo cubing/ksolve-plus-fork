@@ -242,19 +242,18 @@ public:
 	}
 	
 	void adjustOParity(PieceTypes& datasets, Position move) {
-		Position::iterator iter;
-		for (iter = move.begin(); iter != move.end(); iter++) {
-			int omod = datasets[iter->first].omod;
+		for (int iter=0; iter<move.size(); iter++) {
+			int omod = datasets[iter].omod;
 			
 			// compute sum of orientations in this move
 			int osum = 0;
-			for (int i=0; i<iter->second.size; i++) {
-				osum += iter->second.orientation[i];
+			for (int i=0; i<move[iter].size; i++) {
+				osum += move[iter].orientation[i];
 			}
 			
 			// if this move changes the sum of orientations, no parity constraint
 			if (osum % omod != 0) {
-				datasets[iter->first].oparity = false;
+				datasets[iter].oparity = false;
 			}
 		}
 	}
@@ -305,18 +304,19 @@ private:
 		moveGroup.push_back(parentid);
 		
 		// Find order of move
-		Position fixedState; // fix state to remove weird orientations
-		Position::iterator iter;
-		for (iter = move.state.begin(); iter != move.state.end(); iter++){
-			fixedState[iter->first] = newSubstate(iter->second.size);
-			for (int i=0; i<iter->second.size; i++) {
-				fixedState[iter->first].orientation[i] = move.state[iter->first].orientation[i] % datasets[iter->first].omod;
-				fixedState[iter->first].permutation[i] = move.state[iter->first].permutation[i];
+		Position fixedState(move.state.size()); // fix state to remove weird orientations
+		for (int iter=0; iter<move.state.size(); iter++) {
+			fixedState[iter] = newSubstate(move.state[iter].size);
+			for (int i=0; i<move.state[iter].size; i++) {
+				fixedState[iter].orientation[i] = move.state[iter].orientation[i] % datasets[iter].omod;
+				fixedState[iter].permutation[i] = move.state[iter].permutation[i];
 			}
 		}
 		
 		fullmove move2;
-		move2.state.insert(fixedState.begin(), fixedState.end());
+		move2.state.resize(fixedState.size()) ;
+		for (int ii=0; ii<fixedState.size(); ii++)
+			move2.state[ii] = fixedState[ii] ;
 		int order = 0;
 		do {
 			move2.state = mergeMoves(move2.state, fixedState, datasets);
@@ -348,11 +348,13 @@ private:
 			// add updated move to moveGroup and list of moves
 			moveGroup.push_back(moveid);
 			fullmove newMove;
+			newMove.state.resize(move2.state.size()) ;
 			newMove.name = newName;
 			newMove.parentID = parentid;
 			newMove.id = moveid;
 			newMove.qtm = qtm;
-			newMove.state.insert(move2.state.begin(), move2.state.end());
+			for (int ii=0; ii<move2.state.size(); ii++)
+				newMove.state[ii] = move2.state[ii] ;
 			moves[moveid] = newMove;
 			moveid++;
 		}
@@ -413,11 +415,12 @@ private:
 				std::cerr << "Set " << setname << " used in " << title << " is not previously declared.\n";
 				exit(-1);
 			} 
-			if (newPosition.find(setindex) != newPosition.end()) {
+			if (setindex < newPosition.size() && newPosition[setindex].size != 0) {
 				std::cerr << "Set " << setname << " defined more than once in " << title << ".\n";
 				exit(-1);
 			}
-			
+			if (setindex >= newPosition.size())
+				newPosition.resize(setindex+1) ;
 			// create new substate
 			newPosition[setindex] = newSubstate(datasets[setindex].size);
 			if (newPosition[setindex].permutation == NULL || newPosition[setindex].orientation == NULL){
@@ -480,7 +483,7 @@ private:
 		PieceTypes::iterator pieceIter;
 		for (pieceIter = datasets.begin(); pieceIter != datasets.end(); pieceIter++) {
 			int setname = pieceIter->first;
-			if (newPosition.find(setname) == newPosition.end()) { // piece not included
+			if (newPosition[setname].size == 0) { // piece not included
 				newPosition[setname] = newSubstate(datasets[setname].size);
 				if (newPosition[setname].permutation == NULL || newPosition[setname].orientation == NULL){
 					std::cerr << "Could not allocate memory in " << title << ".\n";

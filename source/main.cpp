@@ -169,11 +169,10 @@ struct ksolve {
 			// give out a warning if we have some undefined permutations on a bandaged puzzle
 			if (blocks.size() != 0) {
 				bool hasUndefined = false;
-				Position::iterator iter;
-				for (iter = scramble.state.begin(); iter != scramble.state.end(); iter++) {
-					int setsize = iter->second.size;
+				for (int iter=0; iter<scramble.state.size(); iter++) {
+					int setsize = scramble.state[iter].size;
 					for (int i = 0; i < setsize; i++) {
-						if (iter->second.permutation[i] == -1) {
+						if (scramble.state[iter].permutation[i] == -1) {
 							hasUndefined = true;
 						}
 					}

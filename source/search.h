@@ -50,9 +50,8 @@ static bool treeSolve(Position state, Position& solved, MoveList& moves, PieceTy
         {
         //for (iter = moves.begin(); iter != moves.end(); iter++){
             Position new_state;
-            Position::iterator iter2;
-            for (iter2 = state.begin(); iter2 != state.end(); iter2++){
-                new_state[iter2->first] = newSubstate(iter2->second.size);
+            for (int iter2 = 0; iter2 < state.size(); iter2++) {
+                new_state[iter2] = newSubstate(state[iter2].size);
             }
 
             std::vector<MoveLimit> localMoveLimits = moveLimits;
@@ -123,17 +122,16 @@ static bool treeSolve(Position state, Position& solved, MoveList& moves, PieceTy
                             localMoveLimits[i].limit++;
             }
             // free new_state memory
-            for (iter2 = state.begin(); iter2 != state.end(); iter2++){
-                delete new_state[iter2->first].permutation;
-                delete new_state[iter2->first].orientation;
+            for (int iter2=0; iter2<state.size(); iter2++) {
+                delete new_state[iter2].permutation;
+                delete new_state[iter2].orientation;
             }
         }
 	}
     else {
         Position new_state;
-        Position::iterator iter2;
-        for (iter2 = state.begin(); iter2 != state.end(); iter2++){
-            new_state[iter2->first] = newSubstate(iter2->second.size);
+        for (int iter2 = 0; iter2<state.size(); iter2++) {
+            new_state[iter2] = newSubstate(state[iter2].size);
         }
         MoveList::iterator iter = moves.begin();
         for (iter = moves.begin(); iter != moves.end(); iter++){
@@ -197,9 +195,9 @@ static bool treeSolve(Position state, Position& solved, MoveList& moves, PieceTy
                         moveLimits[i].limit++;
         }
         // free new_state memory
-        for (iter2 = state.begin(); iter2 != state.end(); iter2++){
-            delete new_state[iter2->first].permutation;
-            delete new_state[iter2->first].orientation;
+        for (int iter2 = 0; iter2<state.size(); iter2++) {
+            delete new_state[iter2].permutation;
+            delete new_state[iter2].orientation;
         }
     }
 	return success;
@@ -212,22 +210,16 @@ static bool isSolved(Position& state1, Position& state2, Position& ignore, Piece
 	}
 	else{
 		Position::iterator iter;
-		for (iter = state1.begin(); iter != state1.end(); iter++){
-			if (ignore.find(iter->first) != ignore.end()){
-				for (int i = 0; i < state1[iter->first].size; i++){
-					if (ignore[iter->first].permutation[i] == 0 && state1[iter->first].permutation[i] != state2[iter->first].permutation[i])
+		for (int iter=0; iter<state1.size(); iter++) {
+			{
+				for (int i = 0; i < state1[iter].size; i++){
+					if (ignore[iter].permutation[i] == 0 && state1[iter].permutation[i] != state2[iter].permutation[i])
 						return false;
 				}
-				if (datasets[iter->first].omod != 1)
-					for (int i = 0; i < state1[iter->first].size; i++)
-						if (ignore[iter->first].orientation[i] == 0 && state1[iter->first].orientation[i] != state2[iter->first].orientation[i])
+				if (datasets[iter].omod != 1)
+					for (int i = 0; i < state1[iter].size; i++)
+						if (ignore[iter].orientation[i] == 0 && state1[iter].orientation[i] != state2[iter].orientation[i])
 							return false;
-			} else {
-				if (memcmp(iter->second.permutation, state2[iter->first].permutation, iter->second.size*sizeof(int)) != 0)
-					return false;
-				if (datasets[iter->first].omod != 1)
-					if (memcmp(iter->second.orientation, state2[iter->first].orientation, iter->second.size*sizeof(int)) != 0)
-						return false;
 			}
 		}
 	}
@@ -236,12 +228,11 @@ static bool isSolved(Position& state1, Position& state2, Position& ignore, Piece
 
 // are these two positions exactly equal?
 static bool isEqual(Position& state1, Position& state2, PieceTypes& datasets){
-	Position::iterator iter;
-	for (iter = state1.begin(); iter != state1.end(); iter++){
-		if (memcmp(iter->second.permutation, state2[iter->first].permutation, iter->second.size*sizeof(int)) != 0)
+	for (int iter=0; iter<state1.size(); iter++) {
+		if (memcmp(state1[iter].permutation, state2[iter].permutation, state1[iter].size*sizeof(int)) != 0)
 			return false;
-		if (datasets[iter->first].omod != 1)
-			if (memcmp(iter->second.orientation, state2[iter->first].orientation, iter->second.size*sizeof(int)) != 0)
+		if (datasets[iter].omod != 1)
+			if (memcmp(state1[iter].orientation, state2[iter].orientation, state1[iter].size*sizeof(int)) != 0)
 				return false;
 	}
 	return true;

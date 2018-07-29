@@ -30,8 +30,8 @@ public:
 		int current_max = 999;
 		int current_slack = 0;
 		int current_metric = 0;
-		Position state;
-		Position ignore;
+		Position state(solved.size());
+		Position ignore(solved.size());
 		string name;
 		moveLimits.clear();
 	   
@@ -60,7 +60,7 @@ public:
 					}
 				
 					// Check set names for consistency
-					if (state[setindex].size == 0){
+					if (state[setindex].size != 0){
 						std::cerr << "Set " << setname << " declared more than once in scramble " << name << ".\n";
 						exit(-1);
 					}
@@ -70,6 +70,10 @@ public:
 					}
 				
 					// initialize some info
+					if (setindex >= state.size())
+						state.resize(setindex+1) ;
+					if (setindex >= ignore.size())
+						ignore.resize(setindex+1) ;
 					state[setindex] = newSubstate(datasets[setindex].size);
 					ignore[setindex] = newSubstate(datasets[setindex].size);
 					if (state[setindex].permutation == NULL || state[setindex].orientation == NULL ||
@@ -169,7 +173,9 @@ public:
 				// initialize state to solved, and ignore to empty
 				state.clear();
 				ignore.clear();
-				Position new_state;
+				state.resize(datasets.size()) ;
+				ignore.resize(datasets.size()) ;
+				Position new_state(solved.size());
 				PieceTypes::iterator iter;
 				for (iter = datasets.begin(); iter != datasets.end(); iter++)
 				{
@@ -247,7 +253,9 @@ public:
 				// initialize state to solved, and ignore to empty
 				state.clear();
 				ignore.clear();
-				Position new_state;
+				state.resize(datasets.size()) ;
+				ignore.resize(datasets.size()) ;
+				Position new_state(solved.size());
 				PieceTypes::iterator iter;
 				for (iter = datasets.begin(); iter != datasets.end(); iter++)
 				{

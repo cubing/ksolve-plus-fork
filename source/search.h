@@ -49,7 +49,7 @@ static bool treeSolve(Position state, Position& solved, MoveList& moves, PieceTy
         #pragma omp parallel //num_threads(1)
         {
         //for (iter = moves.begin(); iter != moves.end(); iter++){
-            Position new_state;
+            Position new_state(state.size());
             for (int iter2 = 0; iter2 < state.size(); iter2++) {
                 new_state[iter2] = newSubstate(state[iter2].size);
             }
@@ -129,7 +129,7 @@ static bool treeSolve(Position state, Position& solved, MoveList& moves, PieceTy
         }
 	}
     else {
-        Position new_state;
+        Position new_state(state.size());
         for (int iter2 = 0; iter2<state.size(); iter2++) {
             new_state[iter2] = newSubstate(state[iter2].size);
         }

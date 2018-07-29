@@ -125,6 +125,7 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 	Position temp1, temp2;
 	Position::iterator iter3;
 	for (iter3 = solved.begin(); iter3 != solved.end(); iter3++){
+		temp1[iter3->first] = newSubstate(iter3->second.size);
 		temp2[iter3->first] = newSubstate(iter3->second.size);
 	}
 	MoveList::iterator moveIter;
@@ -144,7 +145,7 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 			// look for positions at this depth
 			for (i=0; i<totalSize; i++) {
 				if (distance[i] == depth) {
-					temp1 = unpackPosition(i, subSizes, datasets, solved);
+					unpackPosition(temp1, i, subSizes, datasets, solved);
 					// try all possible moves and see if that position hasn't been visited
 					for (moveIter = moves.begin(); moveIter != moves.end(); moveIter++){
 						if (using_blocks) // see if the blocks will prevent this move
@@ -182,7 +183,7 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 			std::map<long long, signed char>::iterator mapIter;
 			for (mapIter = distMap1.begin(); mapIter != distMap1.end(); mapIter++) {
 				if (mapIter->second == depth) {
-					temp1 = unpackPosition(mapIter->first, subSizes, datasets, solved);
+					unpackPosition(temp1, mapIter->first, subSizes, datasets, solved);
 					// try all possible moves and see if that position hasn't been visited
 					
 					for (moveIter = moves.begin(); moveIter != moves.end(); moveIter++){
@@ -224,7 +225,7 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 			std::map<std::vector<long long>, signed char>::iterator mapIter;
 			for (mapIter = distMap2.begin(); mapIter != distMap2.end(); mapIter++) {
 				if (mapIter->second == depth) {
-					temp1 = unpackPosition2(mapIter->first, subSizes, datasets, solved);
+					unpackPosition2(temp1, mapIter->first, subSizes, datasets, solved);
 					// try all possible moves and see if that position hasn't been visited
 					for (moveIter = moves.begin(); moveIter != moves.end(); moveIter++){
 						if (using_blocks) // see if the blocks will prevent this move
@@ -278,7 +279,7 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 		for (i=0; i<totalSize; i++) {
 			if (distance[i] == depth - 1) {
 				// found an antipode!
-				temp1 = unpackPosition(i, subSizes, datasets, solved);
+				unpackPosition(temp1, i, subSizes, datasets, solved);
 				Position curPos = temp1;
 				Position nextPos;
 				Position::iterator iter3;
@@ -327,7 +328,7 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 		for (mapIter = distMap1.begin(); mapIter != distMap1.end(); mapIter++) {
 			if (mapIter->second == depth - 1) {
 				// found an antipode!
-				temp1 = unpackPosition(mapIter->first, subSizes, datasets, solved);
+				unpackPosition(temp1, mapIter->first, subSizes, datasets, solved);
 				Position curPos = temp1;
 				Position nextPos;
 				Position::iterator iter3;
@@ -377,7 +378,7 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 		for (mapIter = distMap2.begin(); mapIter != distMap2.end(); mapIter++) {
 			if (mapIter->second == depth - 1) {
 				// found an antipode!
-				temp1 = unpackPosition2(mapIter->first, subSizes, datasets, solved);
+				unpackPosition2(temp1, mapIter->first, subSizes, datasets, solved);
 				Position curPos = temp1;
 				Position nextPos;
 				Position::iterator iter3;
@@ -497,16 +498,9 @@ static std::vector<long long> packPosition2(Position& position, std::map<std::pa
 }
 
 // "Unpack" a full-puzzle position - convert it from a number into a position
-static Position unpackPosition(long long position, std::map<std::pair<string, int>, long long> &subSizes, PieceTypes& datasets, Position& solved) {
+static void unpackPosition(Position &unpacked, long long position, std::map<std::pair<string, int>, long long> &subSizes, PieceTypes& datasets, Position& solved) {
 	// construct a new Position with blank versions of everything
-	Position unpacked;
 	PieceTypes::iterator iter2;
-	for (iter2 = datasets.begin(); iter2 != datasets.end(); iter2++) {
-		substate blankState;
-		blankState.size = iter2->second.size;
-		unpacked.insert(std::pair<string, substate> (iter2->first, blankState));
-	}
-	
 	std::map<std::pair<string, int>, long long>::reverse_iterator iter;
 	for (iter = subSizes.rbegin(); iter != subSizes.rend(); iter++) {
 		// get the current index
@@ -516,34 +510,31 @@ static Position unpackPosition(long long position, std::map<std::pair<string, in
 		// now convert it into a permutation or orientation
 		int size = unpacked[iter->first.first].size;
 		if (iter->first.second == 0) {
-			unpacked[iter->first.first].orientation = oparIndex2Array(curIndex, size, datasets[iter->first.first].omod);
+			oparIndex2Array(curIndex, size, datasets[iter->first.first].omod, unpacked[iter->first.first].orientation);
 		} else if (iter->first.second == 1) {
-			unpacked[iter->first.first].orientation = oIndex2Array(curIndex, size, datasets[iter->first.first].omod);
+			oIndex2Array(curIndex, size, datasets[iter->first.first].omod,unpacked[iter->first.first].orientation);
 		} else if (iter->first.second == 2) {
-			unpacked[iter->first.first].permutation = pIndex2Array(curIndex, size);
+			pIndex2Array(curIndex, size, unpacked[iter->first.first].permutation);
 		} else if (iter->first.second == 3) {
-			unpacked[iter->first.first].permutation = pIndex3Array(curIndex, solved[iter->first.first].permutation, solved[iter->first.first].size);
+			pIndex3Array(curIndex, solved[iter->first.first].permutation, solved[iter->first.first].size, unpacked[iter->first.first].permutation);
 		} else {
 			std::cerr << "Something wrong with these subSizes!\n";
 			exit(-1);
 		}	
 	}
-	
-	return unpacked;
 }
 
 // "Unpack" a full-puzzle position - convert it from a number into a *vector*
-static Position unpackPosition2(const std::vector<long long> &position, std::map<std::pair<string, int>, long long> &ignored_subSizes, PieceTypes& datasets, Position& ignored_solved) {
+static void unpackPosition2(Position &unpacked, const std::vector<long long> &position, std::map<std::pair<string, int>, long long> &ignored_subSizes, PieceTypes& datasets, Position& ignored_solved) {
 	// construct a new Position with blank versions of everything
-	Position unpacked;
 	PieceTypes::iterator iter2;
 	int positionAt = 0 ;
 	int bitAt = 0 ;
 	for (iter2 = datasets.begin(); iter2 != datasets.end(); iter2++) {
-		substate blankState;
+		substate &blankState = unpacked[iter2->first] ;
 		int n = iter2->second.size ;
 		blankState.size = n ;
-		int *perm = (int *)calloc(sizeof(int), n) ;
+		int *perm = blankState.permutation ;
 		int permBits = iter2->second.permbits ;
 		int permMask = (1<<permBits)-1 ;
 		for (int i=0; i<n; i++) {
@@ -555,8 +546,7 @@ static Position unpackPosition2(const std::vector<long long> &position, std::map
                       (((unsigned long long)position[positionAt]) >> bitAt)) ;
                         bitAt += permBits ;
                 }
-		blankState.permutation = perm ;
-		int *ori = (int *)calloc(sizeof(int), n) ;
+		int *ori = blankState.orientation ;
 		int oriBits = iter2->second.oribits ;
 		if (oriBits) {
 			int oriMask = (1<<oriBits)-1 ;
@@ -570,10 +560,7 @@ static Position unpackPosition2(const std::vector<long long> &position, std::map
                         	bitAt += oriBits ;
 			}
                 }
-		blankState.orientation = ori ;
-		unpacked.insert(std::pair<string, substate> (iter2->first, blankState));
 	}
-	return unpacked;
 }
 
 #endif

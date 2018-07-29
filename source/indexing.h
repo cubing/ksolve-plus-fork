@@ -57,8 +57,9 @@ static std::vector<int> oIndex2Vector(long long index, int size, int omod) {
 }
 
 // Convert orientation index into an array
-static int* oIndex2Array(long long index, int size, int omod) {
-	int* orientation = new int[size];
+static int* oIndex2Array(long long index, int size, int omod, int *orientation=0) {
+	if (orientation == 0)
+		orientation = new int[size] ;
 	for (int i = size - 1; i >= 0; i--){
 		orientation[i] = index % omod;
 		index /= omod;
@@ -67,8 +68,9 @@ static int* oIndex2Array(long long index, int size, int omod) {
 }
 
 // Convert orientation index (with parity constraint) into an array
-static int* oparIndex2Array(long long index, int size, int omod) {
-	int* orientation = new int[size];
+static int* oparIndex2Array(long long index, int size, int omod, int *orientation=0) {
+	if (orientation == 0)
+		orientation = new int[size] ;
 	orientation[size - 1] = 0;
 	for (int i = size - 2; i >= 0; i--){
 		orientation[i] = index % omod;
@@ -97,8 +99,9 @@ static long long pVector2Index(int permutation[], int size) {
 }
 
 // Convert index into a permutation array (unique)
-static int* pIndex2Array(long long index, int size) {
-	int* permutation = new int[size];
+static int* pIndex2Array(long long index, int size, int *permutation=0) {
+	if (permutation == 0)
+		permutation = new int[size] ;
 	permutation[size-1] = 1;
 	for (int i = size - 2; i >= 0; i--){
 		permutation[i] = 1 + (index % (size-i));
@@ -161,9 +164,9 @@ static int* pIndex3Array(long long index, std::vector<int> solved) {
 }
 
 // Convert index into a permutation array (non-unique)
-static int* pIndex3Array(long long index, int* solved, int size) {
-	int* vec = new int[size];
-	
+static int* pIndex3Array(long long index, int* solved, int size, int *vec=0) {
+	if (vec == 0)
+		vec = new int[size] ;
 	// compute number of times each element appears
 	std::map<int, int> counts;
 	std::map<int, int>::iterator iter;

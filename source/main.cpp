@@ -35,6 +35,21 @@
 #include <time.h>
 #include <string.h>
 
+std::map<std::string, int> setnameLookup ;
+std::vector<std::string> setNames ;
+int setnameIndex(const std::string &s) {
+   std::map<std::string, int>::iterator it = setnameLookup.find(s) ;
+   if (it == setnameLookup.end()) {
+      setnameLookup[s] = setnameLookup.size() ;
+      it = setnameLookup.find(s) ;
+      setNames.push_back(s) ;
+   }
+   return it->second ;
+}
+std::string setnameFromIndex(int i) {
+   return setNames[i] ;
+}
+
 struct ksolve {
 	#include "data.h"
 	#include "move.h"

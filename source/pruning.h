@@ -305,9 +305,9 @@ static PruneTable buildCompletePruneTables(Position solved, MoveList moves, Piec
 	return table;
 }                    
 
-static std::vector<char> buildCompleteOrientationPruningTable(std::vector<int> solved, MoveList moves, string setname, int omod, std::vector<int> ignore)
+static std::vector<char> buildCompleteOrientationPruningTable(std::vector<int> solved, MoveList moves, int setname, int omod, std::vector<int> ignore)
 {
-	std::cout << "Building pruning for " << setname << " orientation.\n";
+	std::cout << "Building pruning for " << setnameFromIndex(setname) << " orientation.\n";
 	std::vector<char> table;
 	int vector_size = solved.size();
 	MoveList::iterator iter;
@@ -390,9 +390,9 @@ static std::vector<char> buildCompleteOrientationPruningTable(std::vector<int> s
 }
 
 // Complete table, unique pieces
-static std::vector<char> buildCompletePermutationPruningTable(std::vector<int> solved, MoveList moves, string setname, std::vector<int> ignore)
+static std::vector<char> buildCompletePermutationPruningTable(std::vector<int> solved, MoveList moves, int setname, std::vector<int> ignore)
 {
-	std::cout << "Building pruning for " << setname << " permutation.\n";
+	std::cout << "Building pruning for " << setnameFromIndex(setname) << " permutation.\n";
 	std::vector<char> table;
 	int vector_size = solved.size();
 	MoveList::iterator iter;
@@ -474,9 +474,9 @@ static std::vector<char> buildCompletePermutationPruningTable(std::vector<int> s
 }
 
 // Complete table, not unique pieces
-static std::vector<char> buildCompletePermutationPruningTable3(std::vector<int> solved, MoveList moves, string setname, std::vector<int> ignore)
+static std::vector<char> buildCompletePermutationPruningTable3(std::vector<int> solved, MoveList moves, int setname, std::vector<int> ignore)
 {
-	std::cout << "Building pruning for " << setname << " permutation\n";
+	std::cout << "Building pruning for " << setnameFromIndex(setname) << " permutation\n";
 	std::vector<char> table;
 	int vector_size = solved.size();
 	MoveList::iterator iter;
@@ -559,9 +559,9 @@ static std::vector<char> buildCompletePermutationPruningTable3(std::vector<int> 
 	return table;
 }
 
-static std::map<std::vector<long long>, char> buildPartialOrientationPruningTable(std::vector<int> solved, MoveList moves, string setname, int omod, std::vector<int> ignore)
+static std::map<std::vector<long long>, char> buildPartialOrientationPruningTable(std::vector<int> solved, MoveList moves, int setname, int omod, std::vector<int> ignore)
 {
-	std::cout << "Building partial pruning table for " << setname << " orientation.\n";
+	std::cout << "Building partial pruning table for " << setnameFromIndex(setname) << " orientation.\n";
 	std::map<std::vector<long long>, char> table;
 	std::map<std::vector<long long>, char> old_table;
 	std::map<std::vector<long long>, char>::iterator iter2, iter3;
@@ -610,9 +610,9 @@ static std::map<std::vector<long long>, char> buildPartialOrientationPruningTabl
 }
 
 
-static std::map<std::vector<long long>, char> buildPartialPermutationPruningTable(std::vector<int> solved, MoveList moves, string setname, std::vector<int> ignore)
+static std::map<std::vector<long long>, char> buildPartialPermutationPruningTable(std::vector<int> solved, MoveList moves, int setname, std::vector<int> ignore)
 {
-	std::cout << "Building partial pruning for " << setname << " permutation.\n";
+	std::cout << "Building partial pruning for " << setnameFromIndex(setname) << " permutation.\n";
 	std::map<std::vector<long long>, char> table;
 	std::map<std::vector<long long>, char> old_table;
 

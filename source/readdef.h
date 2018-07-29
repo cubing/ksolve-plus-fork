@@ -39,7 +39,8 @@ public:
 				else if (command == "Set"){
 					string setname;
 					fin >> setname;
-					if (datasets.find(setname) != datasets.end()) {
+					int setindex = setnameIndex(setname) ;
+					if (datasets.find(setindex) != datasets.end()) {
 						std::cerr << "Set " << setname << " declared more than once.\n";
 						exit(-1);
 					}
@@ -47,19 +48,19 @@ public:
 						std::cerr << "You must define all sets first!\n";
 						exit(-1);
 					}
-					fin >> datasets[setname].size;
-					if (fin.fail() || datasets[setname].size < 1){
+					fin >> datasets[setindex].size;
+					if (fin.fail() || datasets[setindex].size < 1){
 						std::cerr << "Set " << setname << " does not have positive size.\n";
 						exit(-1);
 					}
-					fin >> datasets[setname].omod;
-					if (fin.fail() || datasets[setname].omod < 0){
+					fin >> datasets[setindex].omod;
+					if (fin.fail() || datasets[setindex].omod < 0){
 						std::cerr << "Pieces in " << setname << " does not have a positive (or zero) number of possible orientations.\n";
 						exit(-1);
 					}
-					datasets[setname].ptabletype = TABLE_TYPE_NONE;
-					datasets[setname].otabletype = TABLE_TYPE_NONE;
-					datasets[setname].oparity = true; // adjust later if necessary
+					datasets[setindex].ptabletype = TABLE_TYPE_NONE;
+					datasets[setindex].otabletype = TABLE_TYPE_NONE;
+					datasets[setindex].oparity = true; // adjust later if necessary
 				}
 				else if (command == "Move"){
 					string movename, setname;
@@ -174,8 +175,9 @@ public:
 					string setname, line;
 					fin >> setname;
 					while(setname != "End"){
+					        int setindex = setnameIndex(setname) ;
 						std::set<int> tmp;
-						if (datasets.find(setname) == datasets.end()) {
+						if (datasets.find(setindex) == datasets.end()) {
 							std::cerr << "Set " << setname << " used in Block is not previously declared.\n";
 							exit(-1);
 						}
@@ -185,7 +187,7 @@ public:
 						int piece;
 						while(!input.eof()){
 							input >> piece;
-							if (piece > datasets[setname].size || piece <= 0) {
+							if (piece > datasets[setindex].size || piece <= 0) {
 								std::cerr << "Piece " << piece << " in Block, should not be in set " << setname << "\n";
 								exit(-1);
 							}
@@ -193,7 +195,7 @@ public:
 								tmp.insert(piece);
 							}
 						}
-						tmp_block[setname] = tmp;
+						tmp_block[setindex] = tmp;
 						fin >> setname;
 					}
 					blocks.push_back(tmp_block);
@@ -405,48 +407,49 @@ private:
 		long i, tmpInt;
 		fin >> setname;
 		while (setname != "End") {
+			int setindex = setnameIndex(setname) ;
 			// check that this set is defined, but not used in this position yet
-			if (datasets.find(setname) == datasets.end()) {
+			if (datasets.find(setindex) == datasets.end()) {
 				std::cerr << "Set " << setname << " used in " << title << " is not previously declared.\n";
 				exit(-1);
 			} 
-			if (newPosition.find(setname) != newPosition.end()) {
+			if (newPosition.find(setindex) != newPosition.end()) {
 				std::cerr << "Set " << setname << " defined more than once in " << title << ".\n";
 				exit(-1);
 			}
 			
 			// create new substate
-			newPosition[setname] = newSubstate(datasets[setname].size);
-			if (newPosition[setname].permutation == NULL || newPosition[setname].orientation == NULL){
+			newPosition[setindex] = newSubstate(datasets[setindex].size);
+			if (newPosition[setindex].permutation == NULL || newPosition[setindex].orientation == NULL){
 				std::cerr << "Could not allocate memory in " << title << ".\n";
 				exit(-1);
 			}
 						
 			// read in permutation
-			for (i = 0; i < datasets[setname].size; i++){
+			for (i = 0; i < datasets[setindex].size; i++){
 				fin >> tmpInt;
 				if (fin.fail()){
 					std::cerr << "Error reading " << setname << " permutation in " << title << ".\n";
 					exit(-1);
 				}
-				newPosition[setname].permutation[i] = tmpInt;
+				newPosition[setindex].permutation[i] = tmpInt;
 			}
 			
 			// do unique permutation stuff
 			if (checkUnique) {
-				if (!uniquePermutation(newPosition[setname].permutation, newPosition[setname].size)){
+				if (!uniquePermutation(newPosition[setindex].permutation, newPosition[setindex].size)){
 					std::cerr << "Permutation for set " << setname << " in " << title << " has repeated numbers.\n";
 					exit(-1);
 				}
 			}
 			if (setUnique) {
-				datasets[setname].uniqueperm = uniquePermutation(newPosition[setname].permutation, newPosition[setname].size);
-				calcOtherValues(datasets[setname], newPosition[setname].permutation) ;
+				datasets[setindex].uniqueperm = uniquePermutation(newPosition[setindex].permutation, newPosition[setindex].size);
+				calcOtherValues(datasets[setindex], newPosition[setindex].permutation) ;
 			}
 			
 			// set orientation to zeros (in case user did not give it)
-			for (i = 0; i < datasets[setname].size; i++){
-				newPosition[setname].orientation[i] = 0;
+			for (i = 0; i < datasets[setindex].size; i++){
+				newPosition[setindex].orientation[i] = 0;
 			}
 			
 			// read something in. if it doesn't look like a number,
@@ -456,7 +459,7 @@ private:
 				setname = tmpStr;
 				continue;
 			}
-			for (i = 0; i < datasets[setname].size; i++){
+			for (i = 0; i < datasets[setindex].size; i++){
 				if (i==0) {
 					tmpInt = atol(tmpStr.c_str());
 				} else {
@@ -466,7 +469,7 @@ private:
 					std::cerr << "Error reading " << setname << " orientation in " << title << ".\n";
 					exit(-1);
 				}
-				newPosition[setname].orientation[i] = tmpInt;
+				newPosition[setindex].orientation[i] = tmpInt;
 			}
 			
 			// get next setname
@@ -476,7 +479,7 @@ private:
 		// add "solved" permutations for all undeclared positions!
 		PieceTypes::iterator pieceIter;
 		for (pieceIter = datasets.begin(); pieceIter != datasets.end(); pieceIter++) {
-			string setname = pieceIter->first;
+			int setname = pieceIter->first;
 			if (newPosition.find(setname) == newPosition.end()) { // piece not included
 				newPosition[setname] = newSubstate(datasets[setname].size);
 				if (newPosition[setname].permutation == NULL || newPosition[setname].orientation == NULL){

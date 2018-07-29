@@ -70,11 +70,11 @@ struct subprune{
 
 // some typedefs to make things easier
 typedef std::string string;
-typedef std::map<string, substate> Position;
-typedef std::map<string, std::set<int> > Block;
+typedef std::map<int, substate> Position;
+typedef std::map<int, std::set<int> > Block;
 typedef std::pair<int, int> MovePair;
-typedef std::map<string, subprune> PruneTable;
-typedef std::map<string, dataset> PieceTypes;
+typedef std::map<int, subprune> PruneTable;
+typedef std::map<int, dataset> PieceTypes;
 
 // all the information needed to describe a possible move
 struct fullmove {

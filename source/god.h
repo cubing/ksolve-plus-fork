@@ -24,12 +24,12 @@
 
 static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, std::set<MovePair>& forbiddenPairs, Position& ignore, std::vector<Block>& blocks, int metric){
 	// compute size of puzzle
-	// this pair<string,int> holds the piece set name and the type of data:
+	// this pair<intg,int> holds the piece set name and the type of data:
 	//		0 (orientation with parity constraint),
 	//		1 (orientation without parity constraint),
 	//		2 (unique permutation),
 	//		3 (non-unique permutation)
-	std::map<std::pair<string, int>, long long> subSizes;
+	std::map<std::pair<int, int>, long long> subSizes;
 	
 	Position::iterator iter;
 	for (iter = solved.begin(); iter != solved.end(); iter++) {
@@ -39,15 +39,15 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 			long long tablesize = 1;
 			for (int i = 0; i < size - 1; i++)
 				tablesize *= datasets[iter->first].omod;
-			subSizes.insert(std::pair<std::pair<string, int>, long long>
-					(std::pair<string, int> (iter->first, 0), tablesize));
+			subSizes.insert(std::pair<std::pair<int, int>, long long>
+					(std::pair<int, int> (iter->first, 0), tablesize));
 		} else {
 			// Orientation, no parity constraint
 			long long tablesize = 1;
 			for (int i = 0; i < size; i++)
 				tablesize *= datasets[iter->first].omod;
-			subSizes.insert(std::pair<std::pair<string, int>, long long>
-					(std::pair<string, int> (iter->first, 1), tablesize));
+			subSizes.insert(std::pair<std::pair<int, int>, long long>
+					(std::pair<int, int> (iter->first, 1), tablesize));
 		}
 		
 		if (factorial(datasets[iter->first].size) != -1 && uniquePermutation(solved[iter->first].permutation, size)){
@@ -56,8 +56,8 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 			for (int i = 0; i < size; i++)
 				temp_perm[i] = solved[iter->first].permutation[i];
 			long long tablesize = factorial(size);
-			subSizes.insert(std::pair<std::pair<string, int>, long long>
-				(std::pair<string, int> (iter->first, 2), tablesize));
+			subSizes.insert(std::pair<std::pair<int, int>, long long>
+				(std::pair<int, int> (iter->first, 2), tablesize));
 		}
 		else {
 			// Permutation, not unique pieces
@@ -65,14 +65,14 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 			for (int i = 0; i < size; i++)
 				temp_perm[i] = solved[iter->first].permutation[i];
 			long long tablesize = combinations(temp_perm);
-			subSizes.insert(std::pair<std::pair<string, int>, long long>
-				(std::pair<string, int> (iter->first, 3), tablesize));
+			subSizes.insert(std::pair<std::pair<int, int>, long long>
+				(std::pair<int, int> (iter->first, 3), tablesize));
 		}
 	}
 	
 	long long totalSize = 1;
 	double logSize = 0;
-	std::map<std::pair<string, int>, long long>::iterator iter2;
+	std::map<std::pair<int, int>, long long>::iterator iter2;
 	for (iter2 = subSizes.begin(); iter2 != subSizes.end(); iter2++) {
 		if (iter2->second <= 0) {
 			logSize += 1000; // ensure we will exit soon
@@ -430,8 +430,8 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 }
 
 // "Pack" a full-puzzle position - convert it from a position into a number
-static long long packPosition(Position& position, std::map<std::pair<string, int>, long long> &subSizes, PieceTypes& datasets) {
-	std::map<std::pair<string, int>, long long>::iterator iter;
+static long long packPosition(Position& position, std::map<std::pair<int, int>, long long> &subSizes, PieceTypes& datasets) {
+	std::map<std::pair<int, int>, long long>::iterator iter;
 	long long packed = 0;
 	for (iter = subSizes.begin(); iter != subSizes.end(); iter++) {
 		// multiply by the size of this part
@@ -456,7 +456,7 @@ static long long packPosition(Position& position, std::map<std::pair<string, int
 }
 
 // "Pack" a full-puzzle position - convert it from a position into a *vector*
-static std::vector<long long> packPosition2(Position& position, std::map<std::pair<string, int>, long long> &ignored_subSizes, PieceTypes& datasets, int siz) {
+static std::vector<long long> packPosition2(Position& position, std::map<std::pair<int, int>, long long> &ignored_subSizes, PieceTypes& datasets, int siz) {
 	std::vector<long long> packed ;
 	packed.reserve(siz) ;
 	unsigned long long accum = 0 ;
@@ -498,10 +498,10 @@ static std::vector<long long> packPosition2(Position& position, std::map<std::pa
 }
 
 // "Unpack" a full-puzzle position - convert it from a number into a position
-static void unpackPosition(Position &unpacked, long long position, std::map<std::pair<string, int>, long long> &subSizes, PieceTypes& datasets, Position& solved) {
+static void unpackPosition(Position &unpacked, long long position, std::map<std::pair<int, int>, long long> &subSizes, PieceTypes& datasets, Position& solved) {
 	// construct a new Position with blank versions of everything
 	PieceTypes::iterator iter2;
-	std::map<std::pair<string, int>, long long>::reverse_iterator iter;
+	std::map<std::pair<int, int>, long long>::reverse_iterator iter;
 	for (iter = subSizes.rbegin(); iter != subSizes.rend(); iter++) {
 		// get the current index
 		long long curIndex = position % iter->second;
@@ -525,7 +525,7 @@ static void unpackPosition(Position &unpacked, long long position, std::map<std:
 }
 
 // "Unpack" a full-puzzle position - convert it from a number into a *vector*
-static void unpackPosition2(Position &unpacked, const std::vector<long long> &position, std::map<std::pair<string, int>, long long> &ignored_subSizes, PieceTypes& datasets, Position& ignored_solved) {
+static void unpackPosition2(Position &unpacked, const std::vector<long long> &position, std::map<std::pair<int, int>, long long> &ignored_subSizes, PieceTypes& datasets, Position& ignored_solved) {
 	// construct a new Position with blank versions of everything
 	PieceTypes::iterator iter2;
 	int positionAt = 0 ;

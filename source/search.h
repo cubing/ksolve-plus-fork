@@ -252,7 +252,7 @@ static bool stillSolvable(Position& state, Position& solved, Position& ignore, B
 	Block::iterator iter;
 	for (iter = owned.begin(); iter != owned.end(); iter++) {
 		std::set<int>::iterator iter2;
-		string type = iter->first;
+		int type = iter->first;
 		for (iter2 = owned[type].begin(); iter2 != owned[type].end(); iter2++) {
 			// if not solved and not ignored, return false!
 			if ((ignore[type].permutation[*iter2] == 0 && state[type].permutation[*iter2] != solved[type].permutation[*iter2]) ||

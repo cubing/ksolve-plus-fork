@@ -40,7 +40,7 @@ std::vector<std::string> setNames ;
 int setnameIndex(const std::string &s) {
    std::map<std::string, int>::iterator it = setnameLookup.find(s) ;
    if (it == setnameLookup.end()) {
-      setnameLookup[s] = setnameLookup.size() ;
+      setnameLookup[s] = setNames.size() ;
       it = setnameLookup.find(s) ;
       setNames.push_back(s) ;
    }

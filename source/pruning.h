@@ -253,6 +253,7 @@ static PruneTable buildCompletePruneTables(Position solved, MoveList moves, Piec
 	for (int iter=0; iter<solved.size(); iter++) {
 		int size = solved[iter].size;
 		tmp_ignore.clear();
+		if (iter < ignore.size() && ignore[iter].size > 0)
 			for (int i = 0; i < size; i++)
 				tmp_ignore.push_back(ignore[iter].permutation[i]);
 			
@@ -280,6 +281,7 @@ static PruneTable buildCompletePruneTables(Position solved, MoveList moves, Piec
 		}
 
 		tmp_ignore.clear();
+		if (iter < ignore.size() && ignore[iter].size > 0)
 			for (int i = 0; i < size; i++)
 				tmp_ignore.push_back(ignore[iter].orientation[i]);
 		double osize = log(datasets[iter].omod) * size;

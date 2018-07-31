@@ -211,7 +211,7 @@ static bool isSolved(Position& state1, Position& state2, Position& ignore, Piece
 	else{
 		Position::iterator iter;
 		for (int iter=0; iter<state1.size(); iter++) {
-			{
+			if (ignore[iter].size > 0) {
 				for (int i = 0; i < state1[iter].size; i++){
 					if (ignore[iter].permutation[i] == 0 && state1[iter].permutation[i] != state2[iter].permutation[i])
 						return false;

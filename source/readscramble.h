@@ -31,7 +31,7 @@ public:
 		int current_slack = 0;
 		int current_metric = 0;
 		Position state(solved.size());
-		Position ignore(solved.size());
+		Position ignore ;
 		string name;
 		moveLimits.clear();
 	   

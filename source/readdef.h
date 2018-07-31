@@ -216,7 +216,6 @@ public:
 				else
 					std::cerr << "Unknown command " << command << "\n";
 		}
-		
 		processParallelMoves();
 	}
 

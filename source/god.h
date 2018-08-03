@@ -57,7 +57,7 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 			long long tablesize = factorial(size);
 			if (datasets[iter].pparity) {
 			   subSizes.insert(std::pair<std::pair<int, int>, long long>
-				(std::pair<int, int> (iter, 4), tablesize >> 1));
+				(std::pair<int, int> (iter, 4), tablesize));
 			} else {
 			   subSizes.insert(std::pair<std::pair<int, int>, long long>
 				(std::pair<int, int> (iter, 2), tablesize));

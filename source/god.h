@@ -55,9 +55,9 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 			for (int i = 0; i < size; i++)
 				temp_perm[i] = solved[iter].permutation[i];
 			long long tablesize = factorial(size);
-			if (datasets[iter].pparity) {
+			if (datasets[iter].pparity && size > 1) {
 			   subSizes.insert(std::pair<std::pair<int, int>, long long>
-				(std::pair<int, int> (iter, 4), tablesize));
+				(std::pair<int, int> (iter, 4), tablesize>>1));
 			} else {
 			   subSizes.insert(std::pair<std::pair<int, int>, long long>
 				(std::pair<int, int> (iter, 2), tablesize));

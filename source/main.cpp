@@ -49,6 +49,7 @@ int setnameIndex(const std::string &s) {
 std::string setnameFromIndex(int i) {
    return setNames[i] ;
 }
+long long maxmem = 8000000000LL ;
 
 struct ksolve {
 	#include "data.h"
@@ -65,7 +66,14 @@ struct ksolve {
 	static int ksolveMain(int argc, char *argv[]) {
 
 		srand(time(NULL)); // initialize RNG in case we need it
-
+		while (argc > 3 && argv[1][0] == '-') {
+			argc-- ;
+			argv++ ;
+			switch (argv[0][1]) {
+case 'M': maxmem = 1048576 * atoll(argv[1]) ; argc-- ; argv++ ; break ;
+default: std::cout << "Did not understand argument " << argv[0] << std::endl ;
+			}
+		}
 		if (argc != 3){
 			std::cerr << "ksolve+ v1.3a - Linux Port by Matt Stiefel\n";
 			std::cerr << "(c) 2007-2013 by Kare Krig and Michael Gottlieb\n";
@@ -81,7 +89,7 @@ struct ksolve {
 			exit(-1);
 		}
 		std::ifstream scrambleStream(argv[2]);
-		if (strcmp(argv[2], "!") != 0 && !scrambleStream.good()){
+		if (argv[2][0] != '!' && !scrambleStream.good()){
 			std::cout << "Can't open scramble file!\n";
 			exit(-1);
 		}

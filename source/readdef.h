@@ -241,7 +241,7 @@ public:
 		printPosition(solved);
 	}
 	
-	void adjustOParity(PieceTypes& datasets, Position move) {
+	void adjustOParity(PieceTypes& datasets, const Position &move) {
 		for (int iter=0; iter<move.size(); iter++) {
 			int omod = datasets[iter].omod;
 			

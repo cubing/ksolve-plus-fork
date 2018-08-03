@@ -49,6 +49,7 @@ struct dataset{
 	int otabletype;
 	bool uniqueperm; // Perm of unique numbers (1,2,3,...), or repeated (1,3,1,2)
 	bool oparity; // Does orientation have a parity constraint? (If so, last orientation is unnecessary)
+	bool pparity; // Does permutation have a parity constraint?
 };
 
 // part of a state, including orientation and permutation

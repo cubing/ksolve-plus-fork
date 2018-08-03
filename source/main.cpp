@@ -50,6 +50,7 @@ std::string setnameFromIndex(int i) {
    return setNames[i] ;
 }
 long long maxmem = 8000000000LL ;
+int verbose = 0 ;
 
 struct ksolve {
 	#include "data.h"
@@ -71,6 +72,7 @@ struct ksolve {
 			argv++ ;
 			switch (argv[0][1]) {
 case 'M': maxmem = 1048576 * atoll(argv[1]) ; argc-- ; argv++ ; break ;
+case 'v': verbose++ ; break ;
 default: std::cout << "Did not understand argument " << argv[0] << std::endl ;
 			}
 		}

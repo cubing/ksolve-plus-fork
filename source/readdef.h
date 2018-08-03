@@ -61,6 +61,7 @@ public:
 					datasets[setindex].ptabletype = TABLE_TYPE_NONE;
 					datasets[setindex].otabletype = TABLE_TYPE_NONE;
 					datasets[setindex].oparity = true; // adjust later if necessary
+					datasets[setindex].pparity = true; // adjust later if necessary
 				}
 				else if (command == "Move"){
 					string movename, setname;
@@ -82,6 +83,7 @@ public:
 					moveid++;
 					addPowers(newMove, moveid-1, datasets);
 					adjustOParity(datasets, newMove.state);
+					adjustPParity(datasets, newMove.state);
 				}
 				else if (command == "Solved"){
 					solved = readPosition(fin, false, true, "solved state");
@@ -218,6 +220,8 @@ public:
 					std::cerr << "Unknown command " << command << "\n";
 		}
 		processParallelMoves();
+		if (verbose)
+			print() ;
 	}
 
 	void print(void) // for debugging
@@ -226,7 +230,7 @@ public:
 		PieceTypes::iterator iter;
 		for (iter = datasets.begin(); iter != datasets.end(); iter++)
 		{
-			std::cout << iter->first << " has type " << iter->second.type << ", " << iter->second.size << " elements and is counted mod " << iter->second.omod << " (parity = " << iter->second.oparity << ")\n";     
+			std::cout << setnameFromIndex(iter->first) << " has type " << iter->second.type << ", " << iter->second.size << " elements and is counted mod " << iter->second.omod << " (oparity = " << iter->second.oparity << " pparity = " << iter->second.pparity << ")\n";     
 		}
 		std::cout << "\n";
 		
@@ -255,6 +259,32 @@ public:
 			if (osum % omod != 0) {
 				datasets[iter].oparity = false;
 			}
+		}
+	}
+
+	void adjustPParity(PieceTypes& datasets, const Position &move) {
+		for (int iter=0; iter<move.size(); iter++) {
+			if (!datasets[iter].pparity)
+				continue ;
+			// compute the parity of the permutation in this move
+			int n = move[iter].size ;
+			std::vector<char> done(n) ;
+			for (int i=0; i<n; i++)
+				done[i] = 0 ;
+			int even = 1 ;
+			for (int i=0; i<n; i++)
+				if (!done[i]) {
+					int cnt = 0 ;
+					for (int j=i; !done[j]; j = move[iter].permutation[j]-1) {
+						done[j] = 1 ;
+						cnt++ ;
+					}
+					if ((cnt & 1) == 0)
+						even = 0 ;
+					
+				}
+			if (!even)
+				datasets[iter].pparity = false;
 		}
 	}
 

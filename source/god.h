@@ -55,8 +55,13 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 			for (int i = 0; i < size; i++)
 				temp_perm[i] = solved[iter].permutation[i];
 			long long tablesize = factorial(size);
-			subSizes.insert(std::pair<std::pair<int, int>, long long>
+			if (datasets[iter].pparity) {
+			   subSizes.insert(std::pair<std::pair<int, int>, long long>
+				(std::pair<int, int> (iter, 4), tablesize >> 1));
+			} else {
+			   subSizes.insert(std::pair<std::pair<int, int>, long long>
 				(std::pair<int, int> (iter, 2), tablesize));
+			}
 		}
 		else {
 			// Permutation, not unique pieces
@@ -441,6 +446,8 @@ static long long packPosition(Position& position, std::map<std::pair<int, int>, 
 			packed += pVector2Index(position[iter->first.first].permutation, position[iter->first.first].size);
 		} else if (iter->first.second == 3) {
 			packed += pVector3Index(position[iter->first.first].permutation, position[iter->first.first].size);
+		} else if (iter->first.second == 4) {
+			packed += pVector2IndexP(position[iter->first.first].permutation, position[iter->first.first].size) ;
 		} else {
 			std::cerr << "Something wrong with these subSizes!\n";
 			exit(-1);
@@ -512,6 +519,8 @@ static void unpackPosition(Position &unpacked, long long position, std::map<std:
 			pIndex2Array(curIndex, size, unpacked[iter->first.first].permutation);
 		} else if (iter->first.second == 3) {
 			pIndex3Array(curIndex, solved[iter->first.first].permutation, solved[iter->first.first].size, unpacked[iter->first.first].permutation);
+		} else if (iter->first.second == 4) {
+			pIndex2ArrayP(curIndex, size, unpacked[iter->first.first].permutation);
 		} else {
 			std::cerr << "Something wrong with these subSizes!\n";
 			exit(-1);

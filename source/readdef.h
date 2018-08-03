@@ -280,7 +280,7 @@ public:
 						cnt++ ;
 					}
 					if ((cnt & 1) == 0)
-						even = 0 ;
+						even ^= 1 ;
 					
 				}
 			if (!even)

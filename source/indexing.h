@@ -86,31 +86,89 @@ static long long pVector2Index(std::vector<int> permutation) {
 	return pVector2Index(permutation.data(), permutation.size());
 }
 
-// Convert permutation array (unique) into an index
-static long long pVector2Index(int permutation[], int size) {
-	long long t = 0;
-	for (int i = 0; i < size - 1; i++){
-		t *= (size - i);
-		for (int j = i+1; j<size; j++)
-			if (permutation[i] > permutation[j])
-				t++;
+static long long pVector2Index(int *perm, int n) {
+	int i, j;
+	long long r = 0 ;
+	long long m = 1 ;
+	unsigned char state[] = {
+		0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
+	} ;
+	unsigned char inverse[] = {
+		0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
+	} ;
+	for (i = 0; i+1 < n; i++) {
+		j = inverse[perm[i]-1];
+		inverse[state[i]] = j;
+		state[j] = state[i];
+		r += m * (j - i) ;
+		m *= (n - i) ;
 	}
-	return t;
+	return r ;
 }
 
-// Convert index into a permutation array (unique)
-static int* pIndex2Array(long long index, int size, int *permutation=0) {
-	if (permutation == 0)
-		permutation = new int[size] ;
-	permutation[size-1] = 1;
-	for (int i = size - 2; i >= 0; i--){
-		permutation[i] = 1 + (index % (size-i));
-		index /= (size - i);
-		for (int j = i+1; j < size; j++)
-			if (permutation[j] >= permutation[i])
-				permutation[j]++;
+static int *pIndex2Array(long long ind, int n, int *perm=0) {
+	if (perm == 0)
+		perm = new int[n] ;
+	int i, j;
+	unsigned char state[] = {
+		0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
+	};
+	for (i = 0; i+1 < n; i++) {
+		long long t = ind / (n - i) ;
+		j = i + ind - t * (n - i) ;
+		ind = t ;
+		perm[i] = 1+state[j];
+		state[j] = state[i];
 	}
-	return permutation;
+	perm[n-1] = 1+state[n-1] ;
+	return perm ;
+}
+
+static long long pVector2IndexP(int *perm, int n) {
+	int i, j;
+	long long r = 0 ;
+	long long m = 1 ;
+	unsigned char state[] = {
+		0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
+	} ;
+	unsigned char inverse[] = {
+		0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
+	} ;
+	for (i = 0; i+2 < n; i++) {
+		j = inverse[perm[i]-1];
+		inverse[state[i]] = j;
+		state[j] = state[i];
+		r += m * (j - i) ;
+		m *= (n - i) ;
+	}
+	return r ;
+}
+
+static int *pIndex2ArrayP(long long ind, int n, int *perm=0) {
+	if (perm == 0)
+		perm = new int[n] ;
+	int i, j;
+	unsigned char state[] = {
+		0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
+	};
+	int pars = n ;
+	for (i = 0; i+2 < n; i++) {
+		long long t = ind / (n - i) ;
+		j = i + ind - t * (n - i) ;
+		if (j == i)
+			pars-- ;
+		ind = t ;
+		perm[i] = 1+state[j];
+		state[j] = state[i];
+	}
+	if (pars & 1) {
+		perm[n-1] = 1+state[n-2] ;
+		perm[n-2] = 1+state[n-1] ;
+	} else {
+		perm[n-2] = 1+state[n-2] ;
+		perm[n-1] = 1+state[n-1] ;
+	}
+	return perm ;
 }
 
 // Convert permutation vector (non-unique) into an index

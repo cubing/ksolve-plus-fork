@@ -120,7 +120,7 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 	
 	// Set the solved position to a depth of 0
 	int depth = 0;
-	int* cnt = new int[128]; // signed char only goes up to 127 anyway...
+	long long* cnt = new long long[128]; // signed char only goes up to 127 anyway...
 	for (i=0; i<128; i++) {
 		cnt[i] = 0;
 	}
@@ -266,17 +266,17 @@ static bool godTable(Position& solved, MoveList& moves, PieceTypes& datasets, st
 	}
 	
 	// print total number of positions
-	int totalPositions = 0;
+	long long totalPositions = 0;
 	for (i=0; i<128; i++) {
 		totalPositions += cnt[i];
 	}
 	std::cout << "Total positions: " << totalPositions << "\n";
 	
 	// print a bunch of antipodes
-	int antipodes = 5; // maximum number to print
+	long long antipodes = 5; // maximum number to print
 	if (cnt[depth-1] < 5) antipodes = cnt[depth-1];
 	std::cout << "\nPrinting " << antipodes << " antipodes:\n\n";
-	int antiCnt = 0;
+	long long antiCnt = 0;
 	if (dataStructure==0) {
 		for (i=0; i<totalSize; i++) {
 			if (distance[i] == depth - 1) {

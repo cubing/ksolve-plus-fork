@@ -71,6 +71,7 @@ public:
 					}
 					
 					fullmove newMove;
+					newMove.state.resize(solved.size()) ;
 					newMove.name = movename;
 					newMove.id = moveid;
 					newMove.parentID = moveid;
@@ -404,6 +405,8 @@ private:
 	// read in a position from fin
 	Position readPosition(std::istream& fin, bool checkUnique, bool setUnique, string title) {
 		Position newPosition;
+		if (solved.size())
+		   newPosition.resize(solved.size()) ;
 		string setname, tmpStr;
 		long i, tmpInt;
 		fin >> setname;

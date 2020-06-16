@@ -30,8 +30,8 @@ public:
 		int current_max = 999;
 		int current_slack = 0;
 		int current_metric = 0;
-		Position state;
-		Position ignore;
+		Position state(solved.size());
+		Position ignore ;
 		string name;
 		moveLimits.clear();
 	   
@@ -53,41 +53,46 @@ public:
 				state.clear();
 				ignore.clear();
 				while(setname != "End"){
+					int setindex = setnameIndex(setname) ;
 					if (fin.fail()){
 						std::cerr << "Error reading scramble sets.\n";
 						exit(-1);
 					}
 				
 					// Check set names for consistency
-					if (state.find(setname) != state.end()){
+					if (state[setindex].size != 0){
 						std::cerr << "Set " << setname << " declared more than once in scramble " << name << ".\n";
 						exit(-1);
 					}
-					if (datasets.find(setname) == datasets.end()){
+					if (datasets.find(setindex) == datasets.end()){
 						std::cerr << "Unknown set " << setname << " in scramble " << name <<".\n";
 						exit(-1);
 					}
 				
 					// initialize some info
-					state[setname] = newSubstate(datasets[setname].size);
-					ignore[setname] = newSubstate(datasets[setname].size);
-					if (state[setname].permutation == NULL || state[setname].orientation == NULL ||
-						ignore[setname].permutation == NULL || ignore[setname].orientation == NULL){
+					if (setindex >= state.size())
+						state.resize(setindex+1) ;
+					if (setindex >= ignore.size())
+						ignore.resize(setindex+1) ;
+					state[setindex] = newSubstate(datasets[setindex].size);
+					ignore[setindex] = newSubstate(datasets[setindex].size);
+					if (state[setindex].permutation == NULL || state[setindex].orientation == NULL ||
+						ignore[setindex].permutation == NULL || ignore[setindex].orientation == NULL){
 						std::cerr << "Can't allocate memory in Scramble::Scramble(...)\n";
 						exit(-1);
 					}
 
 					// read permutation
-					for (i = 0; i < datasets[setname].size; i++){
+					for (i = 0; i < datasets[setindex].size; i++){
 						fin >> tmpStr;
 						if (fin.fail()){
 							std::cerr << "Error reading " << setname << " permutation for scramble " << name << ".\n";
 							exit(-1);
 						}
 						if (tmpStr.at(0) == '?') {
-							ignore[setname].permutation[i] = 1;
+							ignore[setindex].permutation[i] = 1;
 							if (tmpStr.size() == 1) { // just a ?
-								state[setname].permutation[i] = -1;
+								state[setindex].permutation[i] = -1;
 								
 								// throw an error message if using blocks
 								if (blocks.size() != 0) {
@@ -96,18 +101,18 @@ public:
 								}
 							} else { // ? and then a number
 								string tmp2 = tmpStr.substr(1);
-								state[setname].permutation[i] = atol(tmp2.c_str());
+								state[setindex].permutation[i] = atol(tmp2.c_str());
 							}
 						} else {
-							state[setname].permutation[i] = atol(tmpStr.c_str());
-							ignore[setname].permutation[i] = 0;
+							state[setindex].permutation[i] = atol(tmpStr.c_str());
+							ignore[setindex].permutation[i] = 0;
 						}
 					}
 					
 					// set orientation to zeros (in case user did not give it)
-					for (i = 0; i < datasets[setname].size; i++){
-						state[setname].orientation[i] = 0;
-						ignore[setname].orientation[i] = 0;
+					for (i = 0; i < datasets[setindex].size; i++){
+						state[setindex].orientation[i] = 0;
+						ignore[setindex].orientation[i] = 0;
 					}
 					
 					// read something in. if it doesn't look like a number,
@@ -118,7 +123,7 @@ public:
 						continue;
 					}
 					
-					for (i = 0; i < datasets[setname].size; i++){
+					for (i = 0; i < datasets[setindex].size; i++){
 						if (i>0) {
 							fin >> tmpStr;
 						}
@@ -127,19 +132,19 @@ public:
 							exit(-1);
 						}
 						if (tmpStr.at(0) == '?') {
-							ignore[setname].orientation[i] = 1;
+							ignore[setindex].orientation[i] = 1;
 							if (tmpStr.size() == 1) { // just a ?
-								state[setname].orientation[i] = 0;
+								state[setindex].orientation[i] = 0;
 							} else { // ? and then a number
 								string tmp2 = tmpStr.substr(1);
-								state[setname].orientation[i] = atol(tmp2.c_str());
+								state[setindex].orientation[i] = atol(tmp2.c_str());
 							}
 						} else {
-							int tmp2 = atoi(tmpStr.c_str()) % datasets[setname].omod;
+							int tmp2 = atoi(tmpStr.c_str()) % datasets[setindex].omod;
 							if (tmp2 < 0)
-								tmp2 += datasets[setname].omod;
-							state[setname].orientation[i] = tmp2;
-							ignore[setname].orientation[i] = 0;
+								tmp2 += datasets[setindex].omod;
+							state[setindex].orientation[i] = tmp2;
+							ignore[setindex].orientation[i] = 0;
 						}
 					}
 				
@@ -168,7 +173,9 @@ public:
 				// initialize state to solved, and ignore to empty
 				state.clear();
 				ignore.clear();
-				Position new_state;
+				state.resize(datasets.size()) ;
+				ignore.resize(datasets.size()) ;
+				Position new_state(solved.size());
 				PieceTypes::iterator iter;
 				for (iter = datasets.begin(); iter != datasets.end(); iter++)
 				{
@@ -246,7 +253,9 @@ public:
 				// initialize state to solved, and ignore to empty
 				state.clear();
 				ignore.clear();
-				Position new_state;
+				state.resize(datasets.size()) ;
+				ignore.resize(datasets.size()) ;
+				Position new_state(solved.size());
 				PieceTypes::iterator iter;
 				for (iter = datasets.begin(); iter != datasets.end(); iter++)
 				{

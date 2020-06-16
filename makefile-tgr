@@ -1,0 +1,4 @@
+ksolve: source/blocks.h source/checks.h source/data.h source/god.h \
+   source/indexing.h source/main.cpp source/move.h source/pruning.h \
+   source/readdef.h source/readscramble.h source/search.h
+	g++ -O3 -std=c++11 -g -o ksolve -march=native -Isource source/main.cpp

@@ -43,10 +43,13 @@ struct dataset{
 	int type;
 	int size;
 	int omod; // Orientations are calculated mod this value
+	int maxInSolved; // maximum value in solved perm; assumes 1-base
+	int permbits, oribits ; // bits for perm and ori
 	int ptabletype;
 	int otabletype;
 	bool uniqueperm; // Perm of unique numbers (1,2,3,...), or repeated (1,3,1,2)
 	bool oparity; // Does orientation have a parity constraint? (If so, last orientation is unnecessary)
+	bool pparity; // Does permutation have a parity constraint?
 };
 
 // part of a state, including orientation and permutation
@@ -68,11 +71,11 @@ struct subprune{
 
 // some typedefs to make things easier
 typedef std::string string;
-typedef std::map<string, substate> Position;
-typedef std::map<string, std::set<int> > Block;
+typedef std::vector<substate> Position;
+typedef std::map<int, std::set<int> > Block;
 typedef std::pair<int, int> MovePair;
-typedef std::map<string, subprune> PruneTable;
-typedef std::map<string, dataset> PieceTypes;
+typedef std::map<int, subprune> PruneTable;
+typedef std::map<int, dataset> PieceTypes;
 
 // all the information needed to describe a possible move
 struct fullmove {

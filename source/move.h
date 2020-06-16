@@ -25,13 +25,13 @@
 // faster version of original applyMove
 static void applyMove(Position& state, Position& new_state, Position& move, PieceTypes& datasets){
 	Position::iterator iter;
-	for (iter = move.begin(); iter != move.end(); iter++){
-		int size = iter->second.size;
-		int omod = datasets[iter->first].omod;
-		int* orientOut = new_state[iter->first].orientation;
-		int* permute1 = state[iter->first].permutation;
-		int* permute2 = iter->second.permutation;
-		int* permuteOut = new_state[iter->first].permutation;
+        for (int iter=0; iter<move.size(); iter++) {
+		int size = move[iter].size;
+		int omod = datasets[iter].omod;
+		int* orientOut = new_state[iter].orientation;
+		int* permute1 = state[iter].permutation;
+		int* permute2 = move[iter].permutation;
+		int* permuteOut = new_state[iter].permutation;
 		
 		if (omod == 1) {
 			for (int i=0; i < size; i++) {
@@ -39,8 +39,8 @@ static void applyMove(Position& state, Position& new_state, Position& move, Piec
 				permuteOut[i] = permute1[permute2[i] - 1];
 			}
 		} else {
-			int* orient1 = state[iter->first].orientation;
-			int* orient2 = iter->second.orientation;
+			int* orient1 = state[iter].orientation;
+			int* orient2 = move[iter].orientation;
 			for (int i=0; i < size; i++) {
 				int permuted = permute2[i] - 1;
 				orientOut[i] = (orient1[permuted] + orient2[permuted]) % omod;
@@ -88,45 +88,43 @@ static int* applySubmoveP(int permutation[], int change_p[], int size)
 }
 
 static Position mergeMoves(Position move1, Position move2, PieceTypes& datasets){
-	Position ans;
-	Position::iterator iter;    
-	for (iter = move1.begin(); iter != move1.end(); iter++){
+	Position ans(move1.size());
+        for (int iter=0; iter<move1.size(); iter++) {
 		substate temp;
-		temp.permutation = applySubmoveP(move1[iter->first].permutation, move2[iter->first].permutation, move2[iter->first].size);
+		temp.permutation = applySubmoveP(move1[iter].permutation, move2[iter].permutation, move2[iter].size);
 
-		int* pinv = new int[move1[iter->first].size];
-		for (int i = 0; i < move1[iter->first].size; i++){
-			for (int j = 0; j < move1[iter->first].size; j++){
-				if (move1[iter->first].permutation[j] == i + 1)
+		int* pinv = new int[move1[iter].size];
+		for (int i = 0; i < move1[iter].size; i++){
+			for (int j = 0; j < move1[iter].size; j++){
+				if (move1[iter].permutation[j] == i + 1)
 					pinv[i] = j + 1;
 			}
 		}
 		
-		temp.orientation = applySubmoveP(move2[iter->first].orientation, pinv, move2[iter->first].size);
-		for (int i = 0; i < move1[iter->first].size; i++)
-			temp.orientation[i] += move1[iter->first].orientation[i];
-		if (datasets[iter->first].omod > 1) // fix for bandaged puzzle centers
-			for (int i = 0; i < move1[iter->first].size; i++)
-				temp.orientation[i] = temp.orientation[i] % datasets[iter->first].omod;
+		temp.orientation = applySubmoveP(move2[iter].orientation, pinv, move2[iter].size);
+		for (int i = 0; i < move1[iter].size; i++)
+			temp.orientation[i] += move1[iter].orientation[i];
+		if (datasets[iter].omod > 1) // fix for bandaged puzzle centers
+			for (int i = 0; i < move1[iter].size; i++)
+				temp.orientation[i] = temp.orientation[i] % datasets[iter].omod;
 				
-		ans[iter->first].permutation = temp.permutation;
-		ans[iter->first].orientation = temp.orientation;
-		ans[iter->first].size = move2[iter->first].size;
+		ans[iter].permutation = temp.permutation;
+		ans[iter].orientation = temp.orientation;
+		ans[iter].size = move2[iter].size;
 	}
 	return ans;
 }
 
 // print the details of a position
 static void printPosition(Position p) {
-	Position::iterator iter;
 	int i;
-	for (iter = p.begin(); iter != p.end(); iter++) {
-		std::cout << iter->first << "\n";
-		for (i=0; i<iter->second.size; i++)
-			std::cout << iter->second.permutation[i] << " ";
+	for (int iter=0; iter<p.size(); iter++) {
+		std::cout << setnameFromIndex(iter) << "\n";
+		for (i=0; i<p[iter].size; i++)
+			std::cout << p[iter].permutation[i] << " ";
 		std::cout << "\n";
-		for (i=0; i<iter->second.size; i++)
-			std::cout << iter->second.orientation[i] << " ";
+		for (i=0; i<p[iter].size; i++)
+			std::cout << p[iter].orientation[i] << " ";
 		std::cout << "\n";
 	}
 }

@@ -24,14 +24,13 @@
 
 static bool blockLegal(Position& state, std::vector<Block>& blocks, Position& move){
 	Block changed;
-	Position::iterator iter;
-	for (iter = move.begin(); iter != move.end(); iter++){
-		int setsize = iter->second.size;
+	for (int iter=0; iter<move.size(); iter++) {
+		int setsize = move[iter].size;
 		for (int i = 0; i < setsize; i++){
-			if (iter->second.permutation[i] != i+1)
-				changed[iter->first].insert(state[iter->first].permutation[i]);
-			else if (iter->second.orientation[i] != 0)
-				changed[iter->first].insert(state[iter->first].permutation[i]);
+			if (move[iter].permutation[i] != i+1)
+				changed[iter].insert(state[iter].permutation[i]);
+			else if (move[iter].orientation[i] != 0)
+				changed[iter].insert(state[iter].permutation[i]);
 		}
 	}
 	

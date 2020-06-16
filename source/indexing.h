@@ -23,13 +23,13 @@
 #define INDEXING_H
 
 // Convert vector of orientations into an index
-static int oVector2Index(std::vector<int> orientations, int omod) {
+static long long oVector2Index(std::vector<int> orientations, int omod) {
 	return oVector2Index(orientations.data(), orientations.size(), omod);
 }
 
 // Convert array of orientations into an index
-static int oVector2Index(int orientations[], int size, int omod) {
-	int tmp = 0;
+static long long oVector2Index(int orientations[], int size, int omod) {
+	long long tmp = 0;
 	for (int i = 0; i < size; i++){
 		tmp = tmp*omod + orientations[i];
 	}
@@ -37,8 +37,8 @@ static int oVector2Index(int orientations[], int size, int omod) {
 }
 
 // Convert array of orientations (with parity constraint) into an index
-static int oparVector2Index(int orientations[], int size, int omod) {
-	int tmp = 0;
+static long long oparVector2Index(int orientations[], int size, int omod) {
+	long long tmp = 0;
 	for (int i = 0; i < size - 1; i++){
 		tmp = tmp*omod + orientations[i];
 	}
@@ -46,7 +46,7 @@ static int oparVector2Index(int orientations[], int size, int omod) {
 }
 
 // Convert orientation index into a vector
-static std::vector<int> oIndex2Vector(int index, int size, int omod) {
+static std::vector<int> oIndex2Vector(long long index, int size, int omod) {
 	std::vector<int> orientations;
 	orientations.resize(size);
 	for (int i = size - 1; i >= 0; i--){
@@ -57,8 +57,9 @@ static std::vector<int> oIndex2Vector(int index, int size, int omod) {
 }
 
 // Convert orientation index into an array
-static int* oIndex2Array(int index, int size, int omod) {
-	int* orientation = new int[size];
+static int* oIndex2Array(long long index, int size, int omod, int *orientation=0) {
+	if (orientation == 0)
+		orientation = new int[size] ;
 	for (int i = size - 1; i >= 0; i--){
 		orientation[i] = index % omod;
 		index /= omod;
@@ -67,8 +68,9 @@ static int* oIndex2Array(int index, int size, int omod) {
 }
 
 // Convert orientation index (with parity constraint) into an array
-static int* oparIndex2Array(int index, int size, int omod) {
-	int* orientation = new int[size];
+static int* oparIndex2Array(long long index, int size, int omod, int *orientation=0) {
+	if (orientation == 0)
+		orientation = new int[size] ;
 	orientation[size - 1] = 0;
 	for (int i = size - 2; i >= 0; i--){
 		orientation[i] = index % omod;
@@ -80,34 +82,93 @@ static int* oparIndex2Array(int index, int size, int omod) {
 }
 
 // Convert permutation vector (unique) into an index
-static int pVector2Index(std::vector<int> permutation) {
+static long long pVector2Index(std::vector<int> permutation) {
 	return pVector2Index(permutation.data(), permutation.size());
 }
 
-// Convert permutation array (unique) into an index
-static int pVector2Index(int permutation[], int size) {
-	int t = 0;
-	for (int i = 0; i < size - 1; i++){
-		t *= (size - i);
-		for (int j = i+1; j<size; j++)
-			if (permutation[i] > permutation[j])
-				t++;
+static long long pVector2Index(int *perm, int n) {
+	int i, j;
+	long long r = 0 ;
+	long long m = 1 ;
+	unsigned char state[] = {
+		0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
+	} ;
+	unsigned char inverse[] = {
+		0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
+	} ;
+	for (i = 0; i+1 < n; i++) {
+		j = inverse[perm[i]-1];
+		inverse[state[i]] = j;
+		state[j] = state[i];
+		r += m * (j - i) ;
+		m *= (n - i) ;
 	}
-	return t;
+	return r ;
 }
 
-// Convert index into a permutation array (unique)
-static int* pIndex2Array(int index, int size) {
-	int* permutation = new int[size];
-	permutation[size-1] = 1;
-	for (int i = size - 2; i >= 0; i--){
-		permutation[i] = 1 + (index % (size-i));
-		index /= (size - i);
-		for (int j = i+1; j < size; j++)
-			if (permutation[j] >= permutation[i])
-				permutation[j]++;
+static int *pIndex2Array(long long ind, int n, int *perm=0) {
+	if (perm == 0)
+		perm = new int[n] ;
+	int i, j;
+	unsigned char state[] = {
+		0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
+	};
+	for (i = 0; i+1 < n; i++) {
+		long long t = ind / (n - i) ;
+		j = i + ind - t * (n - i) ;
+		ind = t ;
+		perm[i] = 1+state[j];
+		state[j] = state[i];
 	}
-	return permutation;
+	perm[n-1] = 1+state[n-1] ;
+	return perm ;
+}
+
+static long long pVector2IndexP(int *perm, int n) {
+	int i, j;
+	long long r = 0 ;
+	long long m = 1 ;
+	unsigned char state[] = {
+		0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
+	} ;
+	unsigned char inverse[] = {
+		0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
+	} ;
+	for (i = 0; i+2 < n; i++) {
+		j = inverse[perm[i]-1];
+		inverse[state[i]] = j;
+		state[j] = state[i];
+		r += m * (j - i) ;
+		m *= (n - i) ;
+	}
+	return r ;
+}
+
+static int *pIndex2ArrayP(long long ind, int n, int *perm=0) {
+	if (perm == 0)
+		perm = new int[n] ;
+	int i, j;
+	unsigned char state[] = {
+		0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
+	};
+	int pars = n ;
+	for (i = 0; i+2 < n; i++) {
+		long long t = ind / (n - i) ;
+		j = i + ind - t * (n - i) ;
+		if (j == i)
+			pars-- ;
+		ind = t ;
+		perm[i] = 1+state[j];
+		state[j] = state[i];
+	}
+	if (pars & 1) {
+		perm[n-1] = 1+state[n-2] ;
+		perm[n-2] = 1+state[n-1] ;
+	} else {
+		perm[n-2] = 1+state[n-2] ;
+		perm[n-1] = 1+state[n-1] ;
+	}
+	return perm ;
 }
 
 // Convert permutation vector (non-unique) into an index
@@ -161,9 +222,9 @@ static int* pIndex3Array(long long index, std::vector<int> solved) {
 }
 
 // Convert index into a permutation array (non-unique)
-static int* pIndex3Array(long long index, int* solved, int size) {
-	int* vec = new int[size];
-	
+static int* pIndex3Array(long long index, int* solved, int size, int *vec=0) {
+	if (vec == 0)
+		vec = new int[size] ;
 	// compute number of times each element appears
 	std::map<int, int> counts;
 	std::map<int, int>::iterator iter;
@@ -248,11 +309,10 @@ static std::vector<long long> packVector(std::vector<int> vec){
        
 static std::vector<long long> packVector(int vec[], int size){
 	std::vector<long long> result (1 + size/8);
-	
 	for (int i = 0; i < size; i += 8) {
 		long long element = 0;
 		for (int j = 0; j < 8; j++)
-			if (i+j < size) element += ((long long)vec[i+j]) << (8*j);
+			if (i+j < size) element += (1LL+vec[i+j]) << (8*j);
 		result[i/8] = element;
 	}
 	return result;
@@ -271,7 +331,8 @@ static std::vector<int> unpackVector(std::vector<long long> vec){
 	}
 	while(result[result.size() - 1] == 0)
 			result.pop_back();
-	
+	for (int i=0; i<result.size(); i++)
+           result[i]-- ;
 	return result;
 }
 

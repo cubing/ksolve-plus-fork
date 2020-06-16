@@ -35,6 +35,23 @@
 #include <time.h>
 #include <string.h>
 
+std::map<std::string, int> setnameLookup ;
+std::vector<std::string> setNames ;
+int setnameIndex(const std::string &s) {
+   std::map<std::string, int>::iterator it = setnameLookup.find(s) ;
+   if (it == setnameLookup.end()) {
+      setnameLookup[s] = setNames.size() ;
+      it = setnameLookup.find(s) ;
+      setNames.push_back(s) ;
+   }
+   return it->second ;
+}
+std::string setnameFromIndex(int i) {
+   return setNames[i] ;
+}
+long long maxmem = 8000000000LL ;
+int verbose = 0 ;
+
 struct ksolve {
 	#include "data.h"
 	#include "move.h"
@@ -50,7 +67,15 @@ struct ksolve {
 	static int ksolveMain(int argc, char *argv[]) {
 
 		srand(time(NULL)); // initialize RNG in case we need it
-
+		while (argc > 3 && argv[1][0] == '-') {
+			argc-- ;
+			argv++ ;
+			switch (argv[0][1]) {
+case 'M': maxmem = 1048576 * atoll(argv[1]) ; argc-- ; argv++ ; break ;
+case 'v': verbose++ ; break ;
+default: std::cout << "Did not understand argument " << argv[0] << std::endl ;
+			}
+		}
 		if (argc != 3){
 			std::cerr << "ksolve+ v1.3a - Linux Port by Matt Stiefel\n";
 			std::cerr << "(c) 2007-2013 by Kare Krig and Michael Gottlieb\n";
@@ -66,7 +91,7 @@ struct ksolve {
 			exit(-1);
 		}
 		std::ifstream scrambleStream(argv[2]);
-		if (!scrambleStream.good()){
+		if (argv[2][0] != '!' && !scrambleStream.good()){
 			std::cout << "Can't open scramble file!\n";
 			exit(-1);
 		}
@@ -154,11 +179,10 @@ struct ksolve {
 			// give out a warning if we have some undefined permutations on a bandaged puzzle
 			if (blocks.size() != 0) {
 				bool hasUndefined = false;
-				Position::iterator iter;
-				for (iter = scramble.state.begin(); iter != scramble.state.end(); iter++) {
-					int setsize = iter->second.size;
+				for (int iter=0; iter<scramble.state.size(); iter++) {
+					int setsize = scramble.state[iter].size;
 					for (int i = 0; i < setsize; i++) {
-						if (iter->second.permutation[i] == -1) {
+						if (scramble.state[iter].permutation[i] == -1) {
 							hasUndefined = true;
 						}
 					}
